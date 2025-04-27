@@ -22,11 +22,29 @@
         canvas {
             width: 80%;
         }
+
+        #controller {
+            position: absolute;
+            background: white;
+            opacity: 0.7;
+            top: 0.5rem;
+            right: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+        }
     </style>
 </head>
 <body>
     <canvas id="gfx"></canvas>
-    <script type="module" src="triangle_test.js"></script>
+
+    <div id="controller">
+        <label>r: <input type="range" id="control-r" min="0" max="255" value="0"></label>
+        <label>g: <input type="range" id="control-g" min="0" max="255" value="0"></label>
+        <label>b: <input type="range" id="control-b" min="0" max="255" value="0"></label>    
+    </div>
+
+    <!-- <script type="module" src="triangle_test_mgk.js"></script> -->
     <script type="text/javascript" src="dist.main.js"></script>
 </body>
 </html>

@@ -13,9 +13,15 @@ async function init() {
     const module = device.createShaderModule({
         label: 'tuto-code',
         code: `
-            @vertex fn vs(
-                @builtin(vertex_index) vertexIndex : u32
-            ) -> @builtin(position) vec4f {
+            struct Uniforms {
+                color: vec4f
+            };
+
+            @group(0) @binding(0)
+            var<uniform> uniforms: Uniforms;
+
+            @vertex
+            fn vs(@builtin(vertex_index) vertexIndex : u32) -> @builtin(position) vec4f {
                 let pos = array(
                     vec2f( 0.0,  0.5),  // top center
                     vec2f(-0.5, -0.5),  // bottom left
@@ -25,8 +31,9 @@ async function init() {
                 return vec4f(pos[vertexIndex], 0.0, 1.0);
             }
         
-            @fragment fn fs() -> @location(0) vec4f {
-                return vec4f(0.0, 1.0, 0.0, 1.0);
+            @fragment
+            fn fs() -> @location(0) vec4f {
+                return uniforms.color;
             }
         `
     });
@@ -41,24 +48,54 @@ async function init() {
         }
     });
 
-    function draw() {
+    const uniformBuffer = device.createBuffer({
+        label: 'tuto',
+        size: 4 * 4,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST 
+    });
+
+    const bindGroup = device.createBindGroup({
+        label: 'tuto',
+        layout: pipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: { buffer : uniformBuffer }}
+        ]
+    })
+    
+    function draw(r=0.0, g=0.0, b=0.0) {
         const encoder = device.createCommandEncoder({label: 'tuto'});
+
+        const colorArray = new Float32Array([r, g, b, 1.0]);
+        device.queue.writeBuffer(uniformBuffer, 0, colorArray.buffer);
+
         const pass = encoder.beginRenderPass({
             label: 'tuto',
             colorAttachments: [{
                 view: context.getCurrentTexture().createView(),
-                clearValue: [ 0.8, 0.75, 0.12, 1 ],
+                clearValue: [ 1.0, 1.0, 1.0, 1 ],
                 loadOp: 'clear',
                 storeOp: 'store'
             }]
         });
         pass.setPipeline(pipeline);
+        pass.setBindGroup(0, bindGroup);
         pass.draw(3);
         pass.end();
         
         const commandBuffer = encoder.finish();
         device.queue.submit([commandBuffer]);        
     }
+
+    const rgbSliders = ['control-r', 'control-g', 'control-b'].map(id => document.getElementById(id));
+    rgbSliders.forEach(slider => {
+        slider.addEventListener('input', () => {
+            draw(
+                parseInt(rgbSliders[0].value) / 255.0,
+                parseInt(rgbSliders[1].value) / 255.0,
+                parseInt(rgbSliders[2].value) / 255.0
+            )
+        })
+    })
 
     draw();
     window.redraw = draw;
