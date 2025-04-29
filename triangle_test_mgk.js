@@ -19,11 +19,14 @@ async function init() {
 
             @group(0) @binding(0)
             var<uniform> uniforms: Uniforms;
+            @group(0) @binding(1) 
+            var<uniform> height: f32;
+
 
             @vertex
             fn vs(@builtin(vertex_index) vertexIndex : u32) -> @builtin(position) vec4f {
                 let pos = array(
-                    vec2f( 0.0,  uniforms.color.w),  // top center
+                    vec2f( 0.0,  height),  // top center
                     vec2f(-0.5, -0.5),  // bottom left
                     vec2f( 0.5, -0.5)   // bottom right
                 );
@@ -54,17 +57,27 @@ async function init() {
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
+    const heightBuffer = device.createBuffer({
+        label: 'height', 
+        size: 4, 
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+
     const bindGroup = device.createBindGroup({
         label: 'tuto',
         layout: pipeline.getBindGroupLayout(0),
-        entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+        entries: [{ binding: 0, resource: { buffer: uniformBuffer,} },
+            {binding: 1, resource: {buffer: heightBuffer}},
+        ],
     })
 
     function draw(r = 0.0, g = 0.0, b = 0.0, p=0.0) {
         const encoder = device.createCommandEncoder({ label: 'tuto' })
 
-        const colorArray = new Float32Array([r, g, b, p])
+        const colorArray = new Float32Array([r, g, b, 1.0]);
+        const height = new Float32Array([p]);
 
+        device.queue.writeBuffer(heightBuffer, 0, height.buffer)
         device.queue.writeBuffer(uniformBuffer, 0, colorArray.buffer)
 
         const pass = encoder.beginRenderPass({
