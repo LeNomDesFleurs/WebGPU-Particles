@@ -18,3 +18,12 @@ Experimenting with particle systems in web-GPU
 - [ ] Experiment - Test new particles properties (life length, form, size, texture)
 - [ ] Crystal - create a symmetry group
 - [ ] Crystal - simulate Growth
+
+
+## References
+
+[Learning javascript from cpp](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+
+[WebGPU comprehensive introduction](https://webgpufundamentals.org/webgpu/lessons/webgpu-fundamentals.html)
+
+![[webgpu-draw-diagram.svg]]
