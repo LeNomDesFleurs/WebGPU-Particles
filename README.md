@@ -26,4 +26,4 @@ Experimenting with particle systems in web-GPU
 
 [WebGPU comprehensive introduction](https://webgpufundamentals.org/webgpu/lessons/webgpu-fundamentals.html)
 
-![[webgpu-draw-diagram.svg]]
+![architecture diagram](webgpu-draw-diagram.svg)
