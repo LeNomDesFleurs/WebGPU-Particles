@@ -1,3 +1,4 @@
+
 async function init() {
     if (!navigator.gpu) throw new Error('WebGPU not supported on the browser.')
 

@@ -30,3 +30,5 @@ Experimenting with particle systems in web-GPU
 [WebGPU comprehensive introduction](https://webgpufundamentals.org/webgpu/lessons/webgpu-fundamentals.html)
 
 ![architecture diagram](webgpu-draw-diagram.svg)
+
+[Example with Type Script](https://webgpu.github.io/webgpu-samples/?sample=rotatingCube#main.ts)
