@@ -93,11 +93,6 @@ async function init() {
 // 8x8 bayer ordered dithering pattern. Each input pixel
 // is scaled to the 0..63 range before looking in this table
 // to determine the action
-// const TRI_VERTICES = array(
-//   vec4(0., 0., 0., 1.),
-//   vec4(0., 1., 0., 1.),
-//   vec4(1., 1., 0., 1.),
-// );
 
 const BAYER_TEXTURE = array(0., 32.,  8., 40.,  2., 34., 10., 42.,
     48., 16., 56., 24., 50., 18., 58., 26.,
@@ -108,16 +103,6 @@ const BAYER_TEXTURE = array(0., 32.,  8., 40.,  2., 34., 10., 42.,
     15., 47.,  7., 39., 13., 45.,  5., 37.,
     63., 31., 55., 23., 61., 29., 53., 21.);
 
-// const float BAYER_TEXTURE[8 * 8] = float[](
-//      0., 32.,  8., 40.,  2., 34., 10., 42.,
-//     48., 16., 56., 24., 50., 18., 58., 26.,
-//     12., 44.,  4., 36., 14., 46.,  6., 38.,
-//     60., 28., 52., 20., 62., 30., 54., 22.,
-//      3., 35., 11., 43.,  1., 33.,  9., 41.,
-//     51., 19., 59., 27., 49., 17., 57., 25.,
-//     15., 47.,  7., 39., 13., 45.,  5., 37.,
-//     63., 31., 55., 23., 61., 29., 53., 21.
-//     );
 
 
 // Getting the specific pattern from the grid
@@ -127,8 +112,8 @@ let BAYER_SIZE = 8.0;
 var uv:vec2f = vec2(0.0, 0.0);
 let width = 1000.0;
 let height = 1000.0;
-uv.x = uvScreenSpace.x * width% BAYER_SIZE;
-uv.y = uvScreenSpace.y * height% BAYER_SIZE;
+
+uv = uvScreenSpace * width % BAYER_SIZE;
 
     // let uv = modf(uvScreenSpace.xy, vec2f(BAYER_SIZE));
     return BAYER_TEXTURE[i32(uv.y * BAYER_SIZE + uv.x)] / (BAYER_SIZE * BAYER_SIZE);
@@ -136,7 +121,7 @@ uv.y = uvScreenSpace.y * height% BAYER_SIZE;
 
 // Crushing the colors
 fn quantize(channel: f32, period: f32) -> f32
-// float quantize(float channel, float period)
+
 {
     return floor((channel + period / 2.0) / period) * period;
 }
@@ -147,15 +132,15 @@ fn quantize(channel: f32, period: f32) -> f32
             let fragCoord = fsInput.texcoord;
             let Colors =2;
             let DITHER_STRENGTH = 1.0;
-    let period = vec3(1.0 / (f32(Colors) - 1.0));
+            let period = vec3(1.0 / (f32(Colors) - 1.0));
     
-    var col = textureSample(ourTexture, ourSampler, fsInput.texcoord).rgb;
-    col += (getBayer(fragCoord) - 0.5) * period * DITHER_STRENGTH;
-    col = vec3f(quantize(col.r, period.r),
-               quantize(col.g, period.g),
-               quantize(col.b, period.b));
+    var output = textureSample(ourTexture, ourSampler, fsInput.texcoord).rgb;
+    output += (getBayer(fragCoord) - 0.5) * period * DITHER_STRENGTH;
+    output = vec3f(quantize(output.r, period.r),
+               quantize(output.g, period.g),
+               quantize(output.b, period.b));
             
-                return vec4f(col, 1.0);
+                return vec4f(output, 1.0);
 
                 
 

@@ -7,7 +7,7 @@ Experimenting with particle systems in web-GPU
 - [x] WebGPU - Sample Texture
 - [x] Dithering shader
 - [ ] Dithering - Clean up shader
-- [ ] Dithering - add parameter
+- [ ] Dithering - add uniform (resolution, color number)
 - [ ] Dithering - add pixelisation
 - [ ] Shader - Split shader in dedicated file
 - [ ] UI - Parameter Tab w/ sliders to input data
@@ -37,4 +37,9 @@ Experimenting with particle systems in web-GPU
 [Example with Type Script](https://webgpu.github.io/webgpu-samples/?sample=rotatingCube#main.ts)
 
 [Dither shader](https://www.shadertoy.com/view/cdXGDn)
+
+[WebGPU function references](https://webgpufundamentals.org/webgpu/lessons/webgpu-wgsl-function-reference.html#func-modf)
+
+
+
 
