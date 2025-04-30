@@ -32,3 +32,6 @@ Experimenting with particle systems in web-GPU
 ![architecture diagram](webgpu-draw-diagram.svg)
 
 [Example with Type Script](https://webgpu.github.io/webgpu-samples/?sample=rotatingCube#main.ts)
+
+[Dither shader](https://www.shadertoy.com/view/cdXGDn)
+
