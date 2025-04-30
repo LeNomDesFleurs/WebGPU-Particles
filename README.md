@@ -3,7 +3,10 @@ Experimenting with particle systems in web-GPU
  
 ## RoadMap
 
-- [ ] WebGPU - floating Triangle
+- [x] WebGPU - floating Triangle
+- [x] WebGPU - Sample Texture
+- [ ] Dithering shader
+- [ ] Shader - Split shader in dedicated file
 - [ ] UI - Parameter Tab w/ sliders to input data
 - [ ] Input - Display Image from internal path
 - [ ] Particles - Particle system sampling input image
