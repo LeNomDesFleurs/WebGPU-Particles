@@ -5,6 +5,7 @@ Experimenting with particle systems in web-GPU
 
 - [x] WebGPU - floating Triangle
 - [x] WebGPU - Sample Texture
+- [ ] Change canvas size dynamicly to fit input image
 - [x] Dithering shader
 - [ ] Dithering - Clean up shader
 - [ ] Dithering - add uniform (resolution, color number)

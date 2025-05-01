@@ -76,6 +76,8 @@ async function init() {
         const res = await fetch(url);
         const blob = await res.blob();
         return await createImageBitmap(blob, { colorSpaceConversion: 'none' });
+        canvas.width = res.width;
+        canvas.height = res.height;
       }
 
       //import image, convert to bitmap, load in a texture
@@ -289,11 +291,25 @@ fn quantize(channel: f32, period: f32) -> f32
     function draw(r = 0.0, g = 0.0, b = 0.0, p=0.0) {
         const encoder = device.createCommandEncoder({ label: 'tuto' })
 
-        const rotationMatrix = mat3.rotation(Math.PI /4.0);
+        let angle = p*180.
+        let radians = angle * (Math.PI / 180.);
+
+        const rotationMatrix = mat3.rotation(radians);
+
+        //Goal is to rescale the rectangle once rotated to avoid cropping
+        const W = canvas.width*Math.abs(Math.cos(radians)) + canvas.height*Math.abs(Math.sin(radians))
+        console.log(W);
+        const H = canvas.width*Math.abs(Math.sin(radians)) + canvas.height*Math.abs(Math.cos(radians))
+        console.log(H);
+        const a = Math.min(canvas.width / W, canvas.height / H);
+        console.log(a);
+
+        const scalingMatrix = mat3.scaling([a, a]);
+        const matrix = mat3.multiply(rotationMatrix, scalingMatrix);
         matrixValue.set([
-            ...rotationMatrix.slice(0, 3), 0,
-            ...rotationMatrix.slice(3, 6), 0,
-            ...rotationMatrix.slice(6, 9), 0,
+            ...matrix.slice(0, 3), 0,
+            ...matrix.slice(3, 6), 0,
+            ...matrix.slice(6, 9), 0,
           ]);
           resolutionValue.set([canvas.width, canvas.height]);
 
