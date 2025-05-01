@@ -298,11 +298,8 @@ fn quantize(channel: f32, period: f32) -> f32
 
         //Goal is to rescale the rectangle once rotated to avoid cropping
         const W = canvas.width*Math.abs(Math.cos(radians)) + canvas.height*Math.abs(Math.sin(radians))
-        console.log(W);
         const H = canvas.width*Math.abs(Math.sin(radians)) + canvas.height*Math.abs(Math.cos(radians))
-        console.log(H);
         const a = Math.min(canvas.width / W, canvas.height / H);
-        console.log(a);
 
         const scalingMatrix = mat3.scaling([a, a]);
         const matrix = mat3.multiply(rotationMatrix, scalingMatrix);
