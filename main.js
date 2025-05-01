@@ -1,4 +1,64 @@
 
+const mat3 = {
+    multiply(a, b) {
+      const a00 = a[0 * 3 + 0];
+      const a01 = a[0 * 3 + 1];
+      const a02 = a[0 * 3 + 2];
+      const a10 = a[1 * 3 + 0];
+      const a11 = a[1 * 3 + 1];
+      const a12 = a[1 * 3 + 2];
+      const a20 = a[2 * 3 + 0];
+      const a21 = a[2 * 3 + 1];
+      const a22 = a[2 * 3 + 2];
+      const b00 = b[0 * 3 + 0];
+      const b01 = b[0 * 3 + 1];
+      const b02 = b[0 * 3 + 2];
+      const b10 = b[1 * 3 + 0];
+      const b11 = b[1 * 3 + 1];
+      const b12 = b[1 * 3 + 2];
+      const b20 = b[2 * 3 + 0];
+      const b21 = b[2 * 3 + 1];
+      const b22 = b[2 * 3 + 2];
+  
+      return [
+        b00 * a00 + b01 * a10 + b02 * a20,
+        b00 * a01 + b01 * a11 + b02 * a21,
+        b00 * a02 + b01 * a12 + b02 * a22,
+        b10 * a00 + b11 * a10 + b12 * a20,
+        b10 * a01 + b11 * a11 + b12 * a21,
+        b10 * a02 + b11 * a12 + b12 * a22,
+        b20 * a00 + b21 * a10 + b22 * a20,
+        b20 * a01 + b21 * a11 + b22 * a21,
+        b20 * a02 + b21 * a12 + b22 * a22,
+      ];
+    },
+    translation([tx, ty]) {
+      return [
+        1, 0, 0,
+        0, 1, 0,
+        tx, ty, 1,
+      ];
+    },
+  
+    rotation(angleInRadians) {
+      const c = Math.cos(angleInRadians);
+      const s = Math.sin(angleInRadians);
+      return [
+        c, s, 0,
+        -s, c, 0,
+        0, 0, 1,
+      ];
+    },
+  
+    scaling([sx, sy]) {
+      return [
+        sx, 0, 0,
+        0, sy, 0,
+        0, 0, 1,
+      ];
+    },
+  };
+
 async function init() {
     if (!navigator.gpu) throw new Error('WebGPU not supported on the browser.')
 
@@ -36,7 +96,9 @@ async function init() {
         label: 'tuto-code',
         code: `
             struct Uniforms {
-                color: vec4f
+                color: vec4f,
+                resolution: vec2f,
+                matrix: mat3x3f,
             };
 
             struct OurVertexShaderOutput {
@@ -44,12 +106,12 @@ async function init() {
                 @location(0) texcoord: vec2f,
             };
 
-            // @group(0) @binding(0)
-            // var<uniform> uniforms: Uniforms;
+            @group(0) @binding(0)
+            var<uniform> uniforms: Uniforms;
             // @group(0) @binding(1) 
             // var<uniform> height: f32;
-            @group(0) @binding(2) var ourSampler: sampler;
-            @group(0) @binding(3) var ourTexture: texture_2d<f32>;
+            @group(0) @binding(1) var ourSampler: sampler;
+            @group(0) @binding(2) var ourTexture: texture_2d<f32>;
 
 
             @vertex
@@ -69,6 +131,9 @@ async function init() {
 
                  let vertex = vertices[vertexIndex];
                     vsOutput.position = vec4f(vertex.xy, 0.0, 1.0);
+
+
+
                     vsOutput.texcoord = vertex.zw;
                     return vsOutput;
             }
@@ -148,10 +213,42 @@ fn quantize(channel: f32, period: f32) -> f32
         `,
     })
 
+    const bindGroupLayout = device.createBindGroupLayout({
+        entries: [{
+            binding: 0,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                buffer: {
+                    type: 'uniform', 
+                    hasDynamicOffset: false,
+                },
+        },
+          {
+            binding: 1,
+            visibility: GPUShaderStage.FRAGMENT,
+            sampler: {
+              type: 'non-filtering',
+            },
+          },
+          {
+            binding: 2,
+            visibility: GPUShaderStage.FRAGMENT,
+            texture: {
+              sampleType: 'unfilterable-float',
+              viewDimension: '2d',
+              multisampled: false,
+            },
+          },
+        ],
+    });
+    
+    const pipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts: [ bindGroupLayout ],
+      });
+    
     
     const pipeline = device.createRenderPipeline({
         label: 'tuto',
-        layout: 'auto',
+        layout: pipelineLayout,
         vertex: { module },
         fragment: {
             module,
@@ -159,43 +256,53 @@ fn quantize(channel: f32, period: f32) -> f32
         },
     })
 
+
+    const uniformBufferSize = (4 + 2 + 12) * 4;
     const uniformBuffer = device.createBuffer({
-        label: 'tuto',
-        size: 5 * 4,
+        label: 'uniforms',
+        // (colors + resolution + transformation matrix)
+        size: uniformBufferSize,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
-    const heightBuffer = device.createBuffer({
-        label: 'height', 
-        size: 4, 
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    })
+    const uniformValues = new Float32Array(uniformBufferSize / 4);
+
+  // offsets to the various uniform values in float32 indices
+    const kColorOffset = 0;
+    const kResolutionOffset = 4;
+    const kMatrixOffset = 6;
+
+  const colorValue = uniformValues.subarray(kColorOffset, kColorOffset + 4);
+  const resolutionValue = uniformValues.subarray(kResolutionOffset, kResolutionOffset + 4);
+  const matrixValue = uniformValues.subarray(kMatrixOffset, kMatrixOffset + 12);
+   
     
     const sampler = device.createSampler();
 
     const bindGroup = device.createBindGroup({
         label: 'tuto',
-        layout: pipeline.getBindGroupLayout(0),
+        layout: bindGroupLayout,
         entries: [
-            // { binding: 0, resource: { buffer: uniformBuffer,} },
-            // {binding: 1, resource: {buffer: heightBuffer}},
-            { binding: 2, resource: sampler },
-          { binding: 3, resource: texture.createView() },
+            { binding: 0, resource: { buffer: uniformBuffer,} },
+            { binding: 1, resource: sampler },
+          { binding: 2, resource: texture.createView() },
         ],
     })
-
-
- 
-
 
     function draw(r = 0.0, g = 0.0, b = 0.0, p=0.0) {
         const encoder = device.createCommandEncoder({ label: 'tuto' })
 
-        const colorArray = new Float32Array([r, g, b, 1.0]);
-        const height = new Float32Array([p]);
+        const rotationMatrix = mat3.rotation(Math.PI /4.0);
+        matrixValue.set([
+            ...rotationMatrix.slice(0, 3), 0,
+            ...rotationMatrix.slice(3, 6), 0,
+            ...rotationMatrix.slice(6, 9), 0,
+          ]);
+          resolutionValue.set([canvas.width, canvas.height]);
 
-        device.queue.writeBuffer(heightBuffer, 0, height.buffer)
-        device.queue.writeBuffer(uniformBuffer, 0, colorArray.buffer)
+        colorValue.set([r, g, b, 1.0]);
+        
+        device.queue.writeBuffer(uniformBuffer, 0, uniformValues);
         device.queue.copyExternalImageToTexture(
             { source, flipY: true },
             { texture },
