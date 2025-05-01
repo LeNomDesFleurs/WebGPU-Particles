@@ -108,8 +108,6 @@ async function init() {
 
             @group(0) @binding(0)
             var<uniform> uniforms: Uniforms;
-            // @group(0) @binding(1) 
-            // var<uniform> height: f32;
             @group(0) @binding(1) var ourSampler: sampler;
             @group(0) @binding(2) var ourTexture: texture_2d<f32>;
 
@@ -130,9 +128,10 @@ async function init() {
                 var vsOutput: OurVertexShaderOutput;
 
                  let vertex = vertices[vertexIndex];
-                    vsOutput.position = vec4f(vertex.xy, 0.0, 1.0);
-
-
+                 let rotate_position = uniforms.matrix * vec3f(vertex.xy, 1);
+                    vsOutput.position = vec4f(rotate_position, 1.0);
+                // vsOutput.position = vec4f(vertex.xy, 1.0, 1.0);
+                    
 
                     vsOutput.texcoord = vertex.zw;
                     return vsOutput;
@@ -257,10 +256,11 @@ fn quantize(channel: f32, period: f32) -> f32
     })
 
 
-    const uniformBufferSize = (4 + 2 + 12) * 4;
+    // (colors + resolution + transformation matrix)
+    // must be at least 80 bytes
+    const uniformBufferSize = ((4 + 2 + 12) * 4)+8;
     const uniformBuffer = device.createBuffer({
         label: 'uniforms',
-        // (colors + resolution + transformation matrix)
         size: uniformBufferSize,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
@@ -270,7 +270,7 @@ fn quantize(channel: f32, period: f32) -> f32
   // offsets to the various uniform values in float32 indices
     const kColorOffset = 0;
     const kResolutionOffset = 4;
-    const kMatrixOffset = 6;
+    const kMatrixOffset = 8;
 
   const colorValue = uniformValues.subarray(kColorOffset, kColorOffset + 4);
   const resolutionValue = uniformValues.subarray(kResolutionOffset, kResolutionOffset + 4);
