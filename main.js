@@ -173,11 +173,8 @@ const BAYER_TEXTURE = array(0., 32.,  8., 40.,  2., 34., 10., 42.,
 fn getBayer(uvScreenSpace: vec2f) ->f32 
 {
 let BAYER_SIZE = 8.0;
-var uv:vec2f = vec2(0.0, 0.0);
-let width = 1000.0;
-let height = 1000.0;
 
-uv = uvScreenSpace * width % BAYER_SIZE;
+var uv = uvScreenSpace * uniforms.resolution % BAYER_SIZE;
 
     // let uv = modf(uvScreenSpace.xy, vec2f(BAYER_SIZE));
     return BAYER_TEXTURE[i32(uv.y * BAYER_SIZE + uv.x)] / (BAYER_SIZE * BAYER_SIZE);
