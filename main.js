@@ -193,7 +193,7 @@ fn quantize(channel: f32, period: f32) -> f32
             fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
 
             let fragCoord = fsInput.texcoord;
-            let Colors =2;
+            let Colors = (uniforms.color.x*16)+1;
             let DITHER_STRENGTH = 1.0;
             let period = vec3(1.0 / (f32(Colors) - 1.0));
     
@@ -288,7 +288,7 @@ fn quantize(channel: f32, period: f32) -> f32
         ],
     })
 
-    function draw(r = 0.0, g = 0.0, b = 0.0, p=0.0) {
+    function draw(r = 0.5, g = 0.0, b = 0.0, p=0.0) {
         const encoder = device.createCommandEncoder({ label: 'tuto' })
 
         let angle = p*180.
