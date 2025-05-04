@@ -1,4 +1,4 @@
-import { TYPE_SIZE } from "./utils.js"
+import { TYPE_SIZE, getUniformBufferSize } from "./utils.js"
 import { rendererInstance } from "./Renderer.js";
 
 // class WGPUBuffer {
@@ -10,7 +10,7 @@ class UniformBuffer /*extends WGPUBuffer*/ {
         if (!rendererInstance) throw new Error('no renderer instance found');
 
         this.bufferObject = rendererInstance.getDevice().createBuffer({
-            size: buffer.byteLength ,
+            size: getUniformBufferSize(buffer.byteLength),
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, // TODO add flag selection on builder
         })
 

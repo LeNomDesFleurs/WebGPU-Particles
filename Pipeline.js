@@ -92,7 +92,6 @@ export class Pipeline {
         this.entries = entries;
 
         const device = rendererInstance.getDevice();
-        console.log(this._getBindGroupLayoutInfo())
         this.bindgroupLayout = device.createBindGroupLayout({ entries: this._getBindGroupLayoutInfo() });
         this.bindgroup = device.createBindGroup({
             label: name + '-bindgroup',

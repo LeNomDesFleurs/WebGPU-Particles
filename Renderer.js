@@ -28,12 +28,11 @@ class Renderer {
         this._context = context;
         this._format = format;
 
-        this._view = this._context.getCurrentTexture().createView()
         this._sampler = this._device.createSampler();
 
     }
 
-    getView() { return this._view; }
+    getView() { return this._context.getCurrentTexture().createView(); }
     getSampler() { return this._sampler; }
     getDevice() { return this._device; }
     getFormat() { return this._format; }
@@ -95,24 +94,16 @@ class RenderModel {
     bindPipeline(pipeline) { this._pipelineObject = pipeline; }
     
     render() {
-        const encoder = this.device.createCommandEncoder({ label: 'dithering' })
-        const pass = encoder.beginRenderPass({
-            colorAttachments: [
-                {
-                    view: this.view,
-                    clearValue: [1.0, 1.0, 1.0, 1],
-                    loadOp: 'clear',
-                    storeOp: 'store',
-                },
-            ],
-        })
+        const encoder = this.device.createCommandEncoder({ label: 'dithering' });
+
+        const pass = encoder.beginRenderPass(this._renderPassDescriptor);
         pass.setPipeline(this._pipelineObject.getPipeline())
         pass.setBindGroup(0, this._pipelineObject.getBindGroup())
         pass.draw(this._verticesNb);
         pass.end()
 
         const commandBuffer = encoder.finish()
-        device.queue.submit([commandBuffer])
+        this.device.queue.submit([commandBuffer])
     }
 
     createCommandQueue() {

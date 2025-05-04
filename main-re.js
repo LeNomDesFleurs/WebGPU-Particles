@@ -76,9 +76,20 @@ async function init() {
             renderer.getDevice().queue.writeBuffer(uniformBuffer.getBufferObject(), 0, uniformBuffer.getBuffer());    
         } 
     }).addCommand({
-        execute: () => modelDithering.render
+        execute: () => modelDithering.render()
     });
 
+    modelDithering.setRenderPassEncoder({
+        colorAttachments: [
+            {
+                view: renderer.getView(),
+                clearValue: [1.0, 1.0, 1.0, 1],
+                loadOp: 'clear',
+                storeOp: 'store',
+            },
+        ],
+    })
+    modelDithering.setVerticesNum(6);
     commandQueue.run();
 
 	// const rot = document.getElementById('control-p');
