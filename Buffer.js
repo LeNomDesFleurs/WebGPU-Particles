@@ -19,7 +19,13 @@ class UniformBuffer /*extends WGPUBuffer*/ {
     }
 
     get(k) { return this.subarraysMap.get(k); }
-    set(k, v) { this.subarraysMap.set(k, v); }
+    set(k, v) {
+        const subarray = this.subarraysMap.get(k);
+        if (!subarray) throw new Error(`Uniform ${k} not found.`);
+        for (let i = 0; i < v.length; i++) {
+            subarray[i] = v[i];
+        }
+    }
     getBuffer() { return this.buffer; }
     getBufferObject() { return this.bufferObject; }
     update(k, v) { this.uniforms[k].value = v; }
@@ -35,7 +41,7 @@ export class UniformBufferBuilder {
 
     add(info) {
         const size = TYPE_SIZE[info.type];
-        this.uniforms.set(info.name, { offset : this.size, size });
+        this.uniforms.set(info.name, { offset : this.size / 4, size: size/ 4 }); // todo
         this.size += size;
         return this;
     }

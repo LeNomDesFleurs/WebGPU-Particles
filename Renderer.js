@@ -46,7 +46,6 @@ class Renderer {
 class RenderModel {
     constructor(device) {
         this.device = device;
-
         this.queue = [];
         this.shaderModules = new Map();
         this.textures = new Map();

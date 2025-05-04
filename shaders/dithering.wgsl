@@ -1,6 +1,6 @@
 struct Uniforms {
     resolution: vec2f,
-    transformMatrix: mat4x4f,
+    transformMatrix: mat3x3f,
 };
 
 struct OurVertexShaderOutput {

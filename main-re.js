@@ -3,7 +3,7 @@ import { mat4 } from './lib/esm/index.js';
 import { UniformBufferBuilder } from "./Buffer.js"
 import { EntryBuilder, ResourceType, Pipeline } from "./Pipeline.js";
 
-let IMAGE_URL = 'rose.jpg'
+let IMAGE_URL = './rose.jpg'
 let DITHERING_SHADER_PATH = "./shaders/dithering-mat4.wgsl"
 
 const state = {

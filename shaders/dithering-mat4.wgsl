@@ -29,7 +29,8 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     var vsOutput: OurVertexShaderOutput;
 
     let vertex = vertices[vertexIndex];
-    let rotate_position = uniforms.transformMatrix * vec4f(vertex.xy, 0.0, 1.0);
+    // vsOutput.position = uniforms.transformMatrix * vec4f(vertex.xy, 0.0, 1.0);
+    vsOutput.position = vec4f(vertices[vertexIndex].xy, 0.0, 1.0);
 
     vsOutput.texcoord = vertex.zw;
     return vsOutput;
