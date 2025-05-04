@@ -36,7 +36,7 @@ async function init() {
 
     const bindGroupLayout = device.createBindGroupLayout({
         entries: [{
-            binding: 0,
+                binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                 buffer: {
                     type: 'uniform', 
@@ -86,7 +86,8 @@ async function init() {
 
     const uniformValues = new Float32Array(uniformBufferSize / 4);
 
-	// offsets to the various uniform values in float32 indices
+    // offsets to the various uniform values in float32 indices
+    
     const kResolutionOffset = 0;
     const kMatrixOffset = 4;
 
@@ -105,6 +106,7 @@ async function init() {
         ],
     })
 
+
     function draw(p=0.0) {
         const encoder = device.createCommandEncoder({ label: 'tuto' })
 
@@ -112,13 +114,10 @@ async function init() {
         let radians = angle * (Math.PI / 180.);
 
         const rotationMatrix = mat3.rotation(radians);
-
         //Goal is to rescale the rectangle once rotated to avoid cropping
-        const W = canvas.width*Math.abs(Math.cos(radians)) + canvas.height*Math.abs(Math.sin(radians))
-        const H = canvas.width*Math.abs(Math.sin(radians)) + canvas.height*Math.abs(Math.cos(radians))
-        const a = Math.min(canvas.width / W, canvas.height / H);
+        const scale_value = mat3.rotationScale(radians, canvas.width, canvas.height);
 
-        const scalingMatrix = mat3.scaling([a, a]);
+        const scalingMatrix = mat3.scaling([scale_value, scale_value]);
         const matrix = mat3.multiply(rotationMatrix, scalingMatrix);
         matrixValue.set([
             ...matrix.slice(0, 3), 0,
