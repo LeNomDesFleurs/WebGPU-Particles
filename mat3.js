@@ -57,4 +57,10 @@ export const mat3 = {
             0, 0, 1,
         ];
     },
+
+    rotationScale(radians, width, height) { 
+        const W = width*Math.abs(Math.cos(radians)) + height*Math.abs(Math.sin(radians))
+        const H = width*Math.abs(Math.sin(radians)) + height*Math.abs(Math.cos(radians))
+        return Math.min(width / W, height / H);
+    }
   };
