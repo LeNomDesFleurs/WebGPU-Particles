@@ -2,7 +2,12 @@ import { mat3 } from "./mat3.js"
 import { loadImageBitmap, loadWGSL } from "./utils.js"
 
 let IMAGE_URL = ''
-let DITHERING_SHADER_PATH = "./shaders/sorting.wgsl"
+let clearbufferpath = "./shaders/sorting/clearbuffer.wgsl"
+let compositepath = "./shaders/sorting/composite.wgsl"
+let createmaskpath = "./shaders/sorting/createmask.wgsl"
+let createsortvaluepath = "./shaders/sorting/createsortvalue.wgsl"
+let identifyspanpath = "./shaders/sorting/identifyspans.wgsl"
+let pixelsortpath = "./shaders/sorting/pixelsort.wgsl"
 
 async function init() {
     if (!navigator.gpu) throw new Error('WebGPU not supported on the browser.')
@@ -51,7 +56,7 @@ async function init() {
                 visibility: GPUShaderStage.COMPUTE,
                 storageTexture: {
                     access:"write-only",
-                    format:"rgba8float",
+                    format:"rgba8unorm",
                     viewDimension: '2d',
                     
                 },
@@ -62,7 +67,7 @@ async function init() {
                 visibility: GPUShaderStage.COMPUTE,
                 storageTexture: {
                     access:"read-write",
-                    format:"r32int",
+                    format:"r32uint",
                     viewDimension: '2d',
                     
                 },
@@ -72,7 +77,7 @@ async function init() {
                 visibility: GPUShaderStage.COMPUTE,
                 storageTexture: {
                     access:"read-write",
-                    format:"r32int",
+                    format:"r32uint",
                     viewDimension: '2d',
 
                 },
@@ -122,14 +127,14 @@ async function init() {
     
         const storageMask = device.createTexture({
             label: "storageMask",
-            format: 'r32int',
+            format: 'r32uint',
             size: [source.width, source.height],
             usage: GPUTextureUsage.STORAGE_BINDING 
         })
         
         const storageSortValue = device.createTexture({
             label: "storageSortValue",
-            format: 'r32int',
+            format: 'r32uint',
             size: [source.width, source.height],
             usage: GPUTextureUsage.STORAGE_BINDING 
         })
@@ -141,9 +146,15 @@ async function init() {
             usage: GPUTextureUsage.STORAGE_BINDING 
         })
     
+    context.configure({
+        device: device,
+        format: 'rgba8unorm',
+        usage: GPUTextureUsage.STORAGE_BINDING
+    });
+    
+        const outputTexture = context.getCurrentTexture();
         
         const sampler = device.createSampler();
-        const outputTexture = context.getCurrentTexture();
         
         const bindGroup = device.createBindGroup({
             label: 'tuto',
@@ -161,12 +172,43 @@ async function init() {
 
     // ----------------------------------- SHADER
 
-    const shaderSrc = await loadWGSL(DITHERING_SHADER_PATH);
+    const clearbufferSrc = await loadWGSL(clearbufferpath);
+    const compositeSrc = await loadWGSL(compositepath);
+    const createmaskSrc = await loadWGSL(createmaskpath);
+    const createsortvalueSrc = await loadWGSL(createsortvaluepath);
+    const identifyspanSrc = await loadWGSL(identifyspanpath);
+    const pixelsortSrc = await loadWGSL(pixelsortpath);
     
-    const module = device.createShaderModule({
-        label: 'load-texture',
-        code: shaderSrc
+    const clearbufferModule = device.createShaderModule({
+        label: 'clearbufferSrc',
+        code: clearbufferSrc
     })
+
+    const compositeModule = device.createShaderModule({
+        label: 'compositeSrc',
+        code: compositeSrc
+    })
+
+    const createmaskModule = device.createShaderModule({
+        label: 'createmaskSrc',
+        code: createmaskSrc
+    })
+
+    const createsortvalueModule = device.createShaderModule({
+        label: 'createsortvalueSrc',
+        code: createsortvalueSrc
+    })
+
+    const identifyspanModule = device.createShaderModule({
+        label: 'identifyspanSrc',
+        code: identifyspanSrc
+    })
+
+    const pixelsortModule = device.createShaderModule({
+        label: 'pixelsortSrc',
+        code: pixelsortSrc
+    })
+  
 
     // ----------------------------------- PIPELINE
 
@@ -174,12 +216,43 @@ async function init() {
         bindGroupLayouts: [ bindGroupLayout ],
     });
     
-    const pipeline = device.createRenderPipeline({
+
+    const clearbufferPipeline = device.createComputePipeline({
         label: 'tuto',
         layout: pipelineLayout,
-        compute: { module },
+        compute: { clearbufferModule },
     })
     
+    const compositePipeline = device.createComputePipeline({
+        label: 'tuto',
+        layout: pipelineLayout,
+        compute: { compositeModule },
+    })
+
+    const createMaskPipeline = device.createComputePipeline({
+        label: 'tuto',
+        layout: pipelineLayout,
+        compute: { createmaskModule },
+    })
+
+    const createsortvaluePipeline = device.createComputePipeline({
+        label: 'tuto',
+        layout: pipelineLayout,
+        compute: { createsortvalueModule },
+    })
+
+    const identifyspanPipeline = device.createComputePipeline({
+        label: 'tuto',
+        layout: pipelineLayout,
+        compute: { identifyspanModule },
+    })
+
+    const pixelsortPipeline = device.createComputePipeline({
+        label: 'tuto',
+        layout: pipelineLayout,
+        compute: { pixelsortModule },
+    })
+
     function draw(p=0.0) {
         
         
@@ -219,9 +292,23 @@ async function init() {
                 },
             ],
         })
-        pass.setPipeline(pipeline)
+
+        let width = canvas.width;
+        let height = canvas.height;
+
         pass.setBindGroup(0, bindGroup)
+        pass.setPipeline(createMaskPipeline)
+        passEncoder.dispatchWorkgroups(width / 8, height / 8);
+        pass.setPipeline(createsortvaluePipeline)
         passEncoder.dispatchWorkgroups(width/8, height/8);
+        pass.setPipeline(clearbufferPipeline)
+        passEncoder.dispatchWorkgroups(width / 8, height / 8);
+        pass.setPipeline(identifyspanPipeline)
+        passEncoder.dispatchWorkgroups(width, height);
+        pass.setPipeline(pixelsortPipeline)
+        passEncoder.dispatchWorkgroups(width, height);
+        pass.setPipeline(compositePipeline)
+        passEncoder.dispatchWorkgroups(width / 8, height / 8);
         // pass.draw(6)
         pass.end()
 
