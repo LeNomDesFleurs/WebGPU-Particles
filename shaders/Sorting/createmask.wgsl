@@ -112,7 +112,7 @@ fn CS_CreateMask(@builtin(global_invocation_id) id: vec3u) {
     // uv.x += rand;
 // #endif
 
-    var col: vec4f = textureLoad(inputTexture, inputSampler, vec2u(uv));
+    var col: vec4f = textureSample(inputTexture, inputSampler, vec2u(uv));
 
     var l:f32 = Luminance(col.rgb);
 

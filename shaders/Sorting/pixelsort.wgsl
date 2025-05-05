@@ -136,8 +136,10 @@ var gs_PixelSortCache:array<f32, 256>;
             var maxColorIdx:vec2u = id.xy + maxIndex * direction;
             
             // load non sorted pixels
-            textureStore(outputTexture, minIdx, pow(abs(textureLoad(inputTexture, minColorIdx)), _SortedGamma));
-            textureStore(outputTexture, maxIdx, pow(abs(textureLoad(inputTexture, maxColorIdx)), _SortedGamma));
+            var color = pow(abs(textureSample(inputTexture, inputSampler, minColorIdx.xy)), _SortedGamma);
+            textureStore(outputTexture, minIdx.xy, color);
+            color = pow(abs(textureSample(inputTexture, inputSampler, maxColorIdx.xy)), _SortedGamma);
+            textureStore(outputTexture, maxIdx.xy, color);
 
             gs_PixelSortCache[minIndex] = 2;
             gs_PixelSortCache[maxIndex] = -2;

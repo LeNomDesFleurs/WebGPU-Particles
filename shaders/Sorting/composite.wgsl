@@ -81,7 +81,8 @@ const BUFFER_HEIGHT:i32=1000;
 @compute @workgroup_size(8, 8)
 fn CS_Composite(@builtin(global_invocation_id) id: vec3u) {
     if (textureLoad(s_Mask, id.xy).r == 0) {
-        textureStore(outputTexture, id.xy, textureLoad(inputTexture, inputSampler, id.xy));
+        var color = textureSample(inputTexture, inputSampler, id.xy);
+        textureStore(outputTexture, id.xy, color);
     }
 }
 

@@ -105,7 +105,7 @@ const BUFFER_WIDTH:i32=1000;
 const BUFFER_HEIGHT:i32=1000;
 @compute @workgroup_size(8, 8)
 fn CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u) {
-    var col:vec4f = textureLoad(inputBuffer, inputSampler, id.xy);
+    var col:vec4f = textureSample(inputBuffer, inputSampler, id.xy);
 
     var hsl:vec3f = RGBtoHSL(col.rgb);
 
@@ -118,5 +118,5 @@ fn CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u) {
     else
        { output = hsl.r;}
 
-    tex2Dstore(s_SortValue, id.xy, output);
+    textureStore(s_SortValue, id.xy, output);
 }
