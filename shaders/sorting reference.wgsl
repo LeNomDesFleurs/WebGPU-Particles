@@ -13,95 +13,52 @@
  #define AFX_HORIZONTAL_SORT 0
 #endif
 
-uniform float _LowThreshold <
-    ui_category_closed = true;
-    ui_category = "Mask Settings";
-    ui_min = 0.0f; ui_max = 0.5f;
-    ui_label = "Low Threshold";
-    ui_type = "slider";
-    ui_tooltip = "Adjust the threshold at which dark pixels are omitted from the mask.";
-> = 0.4f;
+// -------------------UNIFORMS
 
-uniform float _HighThreshold <
-    ui_category_closed = true;
-    ui_category = "Mask Settings";
-    ui_min = 0.5f; ui_max = 1.0f;
-    ui_label = "High Threshold";
-    ui_type = "slider";
-    ui_tooltip = "Adjust the threshold at which bright pixels are omitted from the mask.";
-> = 0.72f;
+// Adjust the threshold at which dark pixels are omitted from the mask.
+// 0.0 - 0.5
+const _LowThreshold:f32 = 0.4f;
 
-uniform bool _InvertMask <
-    ui_category_closed = true;
-    ui_category = "Mask Settings";
-    ui_label = "Invert Mask";
-    ui_tooltip = "Invert sorting mask.";
-> = false;
+// Adjust the threshold at which bright pixels are omitted from the mask.
+// 0.5 - 1.0
+const _HighThreshold:f32 = 0.72f;
 
-uniform float _MaskRandomOffset <
-    ui_category_closed = true;
-    ui_category = "Mask Settings";
-    ui_min = -0.01f; ui_max = 0.01f;
-    ui_label = "Random Offset";
-    ui_type = "drag";
-    ui_tooltip = "Adjust the random offset of each segment to reduce uniformity.";
-> = 0.0f;
+// Invert sorting mask.
+const _InvertMask:bool = false;
 
-uniform float _AnimationSpeed <
-    ui_category_closed = true;
-    ui_category = "Mask Settings";
-    ui_min = 0f; ui_max = 30f;
-    ui_label = "Offset Animation Speed";
-    ui_type = "slider";
-    ui_tooltip = "Animate the random offset.";
-> = 0.0f;
+// Adjust the random offset of each segment to reduce uniformity.
+// -0.01 - 0.01
+const _MaskRandomOffset:f32 = 0.0f;
 
-uniform int _SpanLimit <
-    ui_category_closed = true;
-    ui_category = "Span Settings";
-    ui_min = 0; 
-    ui_max = 256;
-    ui_label = "Length Limit";
-    ui_type = "slider";
-    ui_tooltip = "Adjust the max length of sorted spans. This will heavily impact performance.";
-> = 64;
+// Animate the random offset
+// 0 - 30
+const _AnimationSpeed:f32  = 0.0f;
 
-uniform int _MaxRandomOffset <
-    ui_category_closed = true;
-    ui_category = "Span Settings";
-    ui_min = 1; ui_max = 64;
-    ui_label = "Random Offset";
-    ui_type = "slider";
-    ui_tooltip = "Adjust the random length offset of limited spans to reduce uniformity.";
-> = 1;
 
-uniform int _SortBy <
-    ui_category = "Sort Settings";
-    ui_category_closed = true;
-    ui_type = "combo";
-    ui_label = "Sort By";
-    ui_tooltip = "What color information to sort by.";
-    ui_items = "Luminance\0"
-               "Saturation\0"
-               "Hue\0";
-> = 0;
+// Adjust the max length of sorted spans. This will heavily impact performance.
+// 0 - 256
+const _SpanLimit:i32 = 64;
 
-uniform bool _ReverseSorting <
-    ui_category_closed = true;
-    ui_category = "Sort Settings";
-    ui_label = "Reverse Sorting";
-> = false;
+// Adjust the random length offset of limited spans to reduce uniformity.
+// 1-64
+const _MaxRandomOffset:i32 = 1;
 
-uniform float _SortedGamma <
-    ui_category_closed = true;
-    ui_category = "Sort Settings";
-    ui_min = 0.1f; ui_max = 5.0f;
-    ui_label = "Gamma";
-    ui_type = "drag";
-    ui_tooltip = "Adjust gamma of sorted pixels to accentuate them.";
-> = 1.0f;
+/*
+What color information to sort by
+0 "Luminance\0"
+1 "Saturation\0"
+2 "Hue\0";
+*/
+const _SortBy:i32 = 0;
 
-uniform float _FrameTime < source = "frametime"; >;
+const _ReverseSorting:i32 = false;
+
+// Adjust gamma of sorted pixels to accentuate them.
+// 0.1 - 5.0
+const _SortedGamma:f32 = 1.0f;
+
+const _FrameTime:f32 = 0.0f; 
+// < source = "frametime"; >;
 
 texture2D AFX_PixelSortMaskTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = R8; }; 
 sampler2D Mask { Texture = AFX_PixelSortMaskTex; };
@@ -311,6 +268,8 @@ void CS_PixelSort(uint3 id : SV_DISPATCHTHREADID) {
         }
     }
 }
+
+// ---------------------- DEBUG -------------------------
 
 void CS_Composite(uint3 id : SV_DISPATCHTHREADID) {
     if (tex2Dfetch(Mask, id.xy).r == 0) {
