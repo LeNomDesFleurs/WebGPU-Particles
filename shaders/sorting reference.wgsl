@@ -13,6 +13,7 @@
  #define AFX_HORIZONTAL_SORT 0
 #endif
 
+
 // -------------------UNIFORMS
 
 // Adjust the threshold at which dark pixels are omitted from the mask.
@@ -76,25 +77,25 @@ sampler2D PixelSort { Texture = AFXTemp1::AFX_RenderTex1; MagFilter = POINT; Min
 float4 PS_EndPass(float4 position : SV_POSITION, float2 uv : TEXCOORD) : SV_TARGET { return tex2D(PixelSort, uv).rgba; }
 float4 PS_DebugMask(float4 position : SV_POSITION, float2 uv : TEXCOORD) : SV_TARGET { return tex2D(Mask, uv).r; }
 
-float hash(uint n) {
+float hash(n:u32) {
     // integer hash copied from Hugo Elias
 	n = (n << 13U) ^ n;
     n = n * (n * n * 15731U + 0x789221U) + 0x1376312589U;
-    return float(n & uint(0x7fffffffU)) / float(0x7fffffff);
+    return f32(n & u32(0x7fffffffU)) / f32(0x7fffffff);
 }
 
-void CS_CreateMask(uint3 id : SV_DISPATCHTHREADID) {
-    float2 pixelSize = float2(BUFFER_RCP_HEIGHT, BUFFER_RCP_WIDTH);
+void CS_CreateMask(SV_DISPATCHTHREADID id :vec3u ) {
+    pixelSize:vec2f = vec2f(BUFFER_RCP_HEIGHT, BUFFER_RCP_WIDTH);
 
 #if AFX_HORIZONTAL_SORT == 0
-    uint seed = id.x * BUFFER_WIDTH;
+    seed: u32  = id.x * BUFFER_WIDTH;
 #else
-    uint seed = id.y * BUFFER_HEIGHT;
+    seed: u32 = id.y * BUFFER_HEIGHT;
 #endif
 
-    float rand = hash(seed + (_FrameTime * _AnimationSpeed)) * _MaskRandomOffset;
+    rand:f32 = hash(seed + (_FrameTime * _AnimationSpeed)) * _MaskRandomOffset;
 
-    float2 uv = id.xy / float2(BUFFER_WIDTH, BUFFER_HEIGHT);
+    uv:vec2f = id.xy / vec2f(BUFFER_WIDTH, BUFFER_HEIGHT);
 
 #if AFX_HORIZONTAL_SORT == 0
     uv.y += rand;
@@ -102,21 +103,21 @@ void CS_CreateMask(uint3 id : SV_DISPATCHTHREADID) {
     uv.x += rand;
 #endif
 
-    float4 col = saturate(tex2Dlod(Common::AcerolaBuffer, float4(uv, 0, 0)));
+    col: vec4f = saturate(tex2Dlod(Common::AcerolaBuffer, vec4f(uv, 0, 0)));
 
-    float l = Common::Luminance(col.rgb);
+    l:f32 = Common::Luminance(col.rgb);
 
-    int result = 1;
+    result:i32 = 1;
     if (l < _LowThreshold || _HighThreshold < l)
         result = 0;
     
     tex2Dstore(s_Mask, id.xy, _InvertMask ? 1 - result : result);
 }
 
-void CS_CreateSortValues(uint3 id : SV_DISPATCHTHREADID) {
-    float4 col = tex2Dfetch(Common::AcerolaBuffer, id.xy);
+void CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u) {
+    col:vec4f = tex2Dfetch(Common::AcerolaBuffer, id.xy);
 
-    float3 hsl = Common::RGBtoHSL(col.rgb);
+    hsl:vec3f = Common::RGBtoHSL(col.rgb);
 
     float output = 0.0f;
 
@@ -130,41 +131,41 @@ void CS_CreateSortValues(uint3 id : SV_DISPATCHTHREADID) {
     tex2Dstore(s_SortValue, id.xy, output);
 }
 
-void CS_ClearBuffers(uint3 id : SV_DISPATCHTHREADID) {
+void CS_ClearBuffers(@builtin(global_invocation_id) id: vec3u) {
     tex2Dstore(s_SpanLengths, id.xy, 0);
     tex2Dstore(AFXTemp1::s_RenderTex, id.xy, 0);
 }
 
-void CS_IdentifySpans(uint3 id : SV_DISPATCHTHREADID) {
-    uint seed = id.x + BUFFER_WIDTH * id.y + BUFFER_WIDTH * BUFFER_HEIGHT;
-    uint2 idx = 0;
-    uint pos = 0;
-    uint spanStartIndex = 0;
-    uint spanLength = 0;
+void CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u) {
+    seed:u32 = id.x + BUFFER_WIDTH * id.y + BUFFER_WIDTH * BUFFER_HEIGHT;
+    idx:vec2u = 0;
+    pos:u32 = 0;
+    spanStartIndex:u32 = 0;
+    spanLength:u32 = 0;
 
 #if AFX_HORIZONTAL_SORT == 0
-    uint screenLimit = BUFFER_HEIGHT;
+    screenLimit:u32 = BUFFER_HEIGHT;
 #else
-    uint screenLimit = BUFFER_WIDTH;
+    screenLimit:u32 = BUFFER_WIDTH;
 #endif
 
-    uint spanLimit = _SpanLimit - (hash(seed) * _MaxRandomOffset);
+    spanLimit:u32 = _SpanLimit - (hash(seed) * _MaxRandomOffset);
 
     while (pos < screenLimit) {
 #if AFX_HORIZONTAL_SORT == 0
-        idx = uint2(id.x, pos);
+        idx = vec2u(id.x, pos);
 #else
-        idx = uint2(pos, id.y);
+        idx = vec2u(pos, id.y);
 #endif
 
-        int mask = tex2Dfetch(Mask, idx).r;
+        mask:i32 = tex2Dfetch(Mask, idx).r;
         pos++;
 
         if (mask == 0 || spanLength >= spanLimit) {
 #if AFX_HORIZONTAL_SORT == 0
-            idx = uint2(id.x, spanStartIndex);
+            idx = vec2u(id.x, spanStartIndex);
 #else
-            idx = uint2(spanStartIndex, id.y);
+            idx = vec2u(spanStartIndex, id.y);
 #endif
             tex2Dstore(s_SpanLengths, idx, mask == 1 ? spanLength + 1 : spanLength);
             spanStartIndex = pos;
@@ -176,26 +177,26 @@ void CS_IdentifySpans(uint3 id : SV_DISPATCHTHREADID) {
 
     if (spanLength != 0) {
 #if AFX_HORIZONTAL_SORT == 0
-        idx = uint2(id.x, spanStartIndex);
+        idx = vec2u(id.x, spanStartIndex);
 #else
-        idx = uint2(spanStartIndex, id.y);
+        idx = vec2u(spanStartIndex, id.y);
 #endif
         tex2Dstore(s_SpanLengths, idx, spanLength);
     }
 }
 
-void CS_VisualizeSpans(uint3 id : SV_DISPATCHTHREADID) {
+void CS_VisualizeSpans(@builtin(global_invocation_id) id: vec3u) {
     int spanLength = tex2Dfetch(SpanLengths, id.xy).r;
 
     if (spanLength >= 1) {
-        uint seed = id.x + BUFFER_WIDTH * id.y + BUFFER_WIDTH * BUFFER_HEIGHT;
-        float4 c = float4(hash(seed), hash(seed * 2), hash(seed * 3), 1.0f);
+        seed:u32 = id.x + BUFFER_WIDTH * id.y + BUFFER_WIDTH * BUFFER_HEIGHT;
+        c:vec4f = vec4f(hash(seed), hash(seed * 2), hash(seed * 3), 1.0f);
 
         for (int i = 0; i < spanLength; ++i) {
 #if AFX_HORIZONTAL_SORT == 0
-            uint2 idx = uint2(id.x, id.y + i);
+            idx:vec2u = vec2u(id.x, id.y + i);
 #else
-            uint2 idx = uint2(id.x + i, id.y);
+            idx:vec2u = vec2u(id.x + i, id.y);
 #endif
 
             tex2Dstore(AFXTemp1::s_RenderTex, idx, c);
@@ -206,7 +207,7 @@ void CS_VisualizeSpans(uint3 id : SV_DISPATCHTHREADID) {
 
 groupshared float gs_PixelSortCache[256];
 
-void CS_PixelSort(uint3 id : SV_DISPATCHTHREADID) {
+void CS_PixelSort(@builtin(global_invocation_id) id: vec3u) {
     const uint spanLength = tex2Dfetch(SpanLengths, id.xy).r;
 
     if (spanLength >= 1) {
@@ -271,7 +272,7 @@ void CS_PixelSort(uint3 id : SV_DISPATCHTHREADID) {
 
 // ---------------------- DEBUG -------------------------
 
-void CS_Composite(uint3 id : SV_DISPATCHTHREADID) {
+void CS_Composite(@builtin(global_invocation_id) id: vec3u) {
     if (tex2Dfetch(Mask, id.xy).r == 0) {
         tex2Dstore(AFXTemp1::s_RenderTex, id.xy, tex2Dfetch(Common::AcerolaBuffer, id.xy));
     }
