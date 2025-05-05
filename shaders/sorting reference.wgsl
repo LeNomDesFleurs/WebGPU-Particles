@@ -61,6 +61,9 @@ const _SortedGamma:f32 = 1.0f;
 const _FrameTime:f32 = 0.0f; 
 // < source = "frametime"; >;
 
+@group(0) @binding(0) var Mask: sampler;
+@group(0) @binding(1) var AFX_PixelSortMaskTex: texture_2d<f32>;
+
 texture2D AFX_PixelSortMaskTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = R8; }; 
 sampler2D Mask { Texture = AFX_PixelSortMaskTex; };
 storage2D s_Mask { Texture = AFX_PixelSortMaskTex; };
@@ -84,7 +87,7 @@ float hash(n:u32) {
     return f32(n & u32(0x7fffffffU)) / f32(0x7fffffff);
 }
 
-void CS_CreateMask(SV_DISPATCHTHREADID id :vec3u ) {
+fn CS_CreateMask(SV_DISPATCHTHREADID id :vec3u )-> {
     pixelSize:vec2f = vec2f(BUFFER_RCP_HEIGHT, BUFFER_RCP_WIDTH);
 
 #if AFX_HORIZONTAL_SORT == 0
@@ -114,7 +117,7 @@ void CS_CreateMask(SV_DISPATCHTHREADID id :vec3u ) {
     tex2Dstore(s_Mask, id.xy, _InvertMask ? 1 - result : result);
 }
 
-void CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u) {
+fn CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u)-> {
     col:vec4f = tex2Dfetch(Common::AcerolaBuffer, id.xy);
 
     hsl:vec3f = Common::RGBtoHSL(col.rgb);
@@ -131,12 +134,12 @@ void CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u) {
     tex2Dstore(s_SortValue, id.xy, output);
 }
 
-void CS_ClearBuffers(@builtin(global_invocation_id) id: vec3u) {
+fn CS_ClearBuffers(@builtin(global_invocation_id) id: vec3u)-> {
     tex2Dstore(s_SpanLengths, id.xy, 0);
     tex2Dstore(AFXTemp1::s_RenderTex, id.xy, 0);
 }
 
-void CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u) {
+fn CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u)-> {
     seed:u32 = id.x + BUFFER_WIDTH * id.y + BUFFER_WIDTH * BUFFER_HEIGHT;
     idx:vec2u = 0;
     pos:u32 = 0;
@@ -185,7 +188,7 @@ void CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u) {
     }
 }
 
-void CS_VisualizeSpans(@builtin(global_invocation_id) id: vec3u) {
+fn CS_VisualizeSpans(@builtin(global_invocation_id) id: vec3u)-> {
     int spanLength = tex2Dfetch(SpanLengths, id.xy).r;
 
     if (spanLength >= 1) {
@@ -207,7 +210,7 @@ void CS_VisualizeSpans(@builtin(global_invocation_id) id: vec3u) {
 
 groupshared float gs_PixelSortCache[256];
 
-void CS_PixelSort(@builtin(global_invocation_id) id: vec3u) {
+fn CS_PixelSort(@builtin(global_invocation_id) id: vec3u)-> {
     const uint spanLength = tex2Dfetch(SpanLengths, id.xy).r;
 
     if (spanLength >= 1) {
@@ -272,7 +275,7 @@ void CS_PixelSort(@builtin(global_invocation_id) id: vec3u) {
 
 // ---------------------- DEBUG -------------------------
 
-void CS_Composite(@builtin(global_invocation_id) id: vec3u) {
+fn CS_Composite(@builtin(global_invocation_id) id: vec3u)-> {
     if (tex2Dfetch(Mask, id.xy).r == 0) {
         tex2Dstore(AFXTemp1::s_RenderTex, id.xy, tex2Dfetch(Common::AcerolaBuffer, id.xy));
     }
