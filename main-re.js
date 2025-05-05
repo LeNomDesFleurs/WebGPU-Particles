@@ -4,7 +4,7 @@ import { UniformBufferBuilder } from "./Buffer.js"
 import { EntryBuilder, ResourceType, Pipeline } from "./Pipeline.js";
 
 let IMAGE_URL = './rose.jpg'
-let DITHERING_SHADER_PATH = "./shaders/dithering-mat4.wgsl"
+let DITHERING_SHADER_PATH = "./shaders/dithering.wgsl"
 
 const state = {
     p : 0.0
@@ -92,12 +92,12 @@ async function init() {
     modelDithering.setVerticesNum(6);
     commandQueue.run();
 
-	// const rot = document.getElementById('control-p');
-	// rot.addEventListener('input', () => {
-	// 	draw(parseFloat(rot.value) / 255.0);
-	// })
+	const rot = document.getElementById('control-p');
+	rot.addEventListener('input', () => {
+		draw(parseFloat(rot.value) / 255.0);
+	})
 
-    // draw()
+    draw()
 }
 
 init()

@@ -16,6 +16,7 @@
 
 // -------------------UNIFORMS
 
+
 // Adjust the threshold at which dark pixels are omitted from the mask.
 // 0.0 - 0.5
 const _LowThreshold:f32 = 0.4f;
@@ -61,8 +62,28 @@ const _SortedGamma:f32 = 1.0f;
 const _FrameTime:f32 = 0.0f; 
 // < source = "frametime"; >;
 
-@group(0) @binding(0) var Mask: sampler;
-@group(0) @binding(1) var AFX_PixelSortMaskTex: texture_2d<f32>;
+// rgba8uint
+// rgba8sint
+// rgba8snorm
+
+// rgba16sint
+// rgba8sint
+
+
+@group(0) @binding(1) var Mask: sampler;
+@group(0) @binding(2) var AFX_PixelSortMaskTex: texture_2d<f32>;
+@group(0) @binding(3) var s_Mask: texture_storage_2d<rgba8sint, read_write>;
+
+@group(0) @binding(4) var SortValue: sampler;
+@group(0) @binding(5) var AFX_SortValueTex: texture_2d<f32>;
+@group(0) @binding(6) var s_SortValue: texture_storage_2d<rgba8sint, read_write>;
+
+@group(0) @binding(7) var SpanLengths: sampler;
+@group(0) @binding(8) var AFX_SpanLengthsTex: texture_2d<f32>;
+@group(0) @binding(9) var s_SpanLengths: texture_storage_2d<rgba16float, read_write>;
+
+@group(0) @binding(10) var AcerolaBuffer: sampler;
+@group(0) @binding(11) var AcerolaBufferTex: texture_2d<f32>;
 
 texture2D AFX_PixelSortMaskTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = R8; }; 
 sampler2D Mask { Texture = AFX_PixelSortMaskTex; };
@@ -80,6 +101,12 @@ sampler2D PixelSort { Texture = AFXTemp1::AFX_RenderTex1; MagFilter = POINT; Min
 float4 PS_EndPass(float4 position : SV_POSITION, float2 uv : TEXCOORD) : SV_TARGET { return tex2D(PixelSort, uv).rgba; }
 float4 PS_DebugMask(float4 position : SV_POSITION, float2 uv : TEXCOORD) : SV_TARGET { return tex2D(Mask, uv).r; }
 
+    // texture2D AcerolaBufferTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RGBA16F; };
+    // sampler2D AcerolaBuffer { Texture = AcerolaBufferTex; MagFilter = POINT; MinFilter = POINT; MipFilter = POINT;};
+
+texture2D AFX_SpanLengthsTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = R16F; }; 
+sampler2D SpanLengths { Texture = AFX_SpanLengthsTex; };
+
 float hash(n:u32) {
     // integer hash copied from Hugo Elias
 	n = (n << 13U) ^ n;
@@ -87,7 +114,7 @@ float hash(n:u32) {
     return f32(n & u32(0x7fffffffU)) / f32(0x7fffffff);
 }
 
-fn CS_CreateMask(SV_DISPATCHTHREADID id :vec3u )-> {
+fn CS_CreateMask(@builtin(global_invocation_id) id: vec3u) {
     pixelSize:vec2f = vec2f(BUFFER_RCP_HEIGHT, BUFFER_RCP_WIDTH);
 
 #if AFX_HORIZONTAL_SORT == 0
@@ -96,7 +123,9 @@ fn CS_CreateMask(SV_DISPATCHTHREADID id :vec3u )-> {
     seed: u32 = id.y * BUFFER_HEIGHT;
 #endif
 
-    rand:f32 = hash(seed + (_FrameTime * _AnimationSpeed)) * _MaskRandomOffset;
+    // rand:f32 = hash(seed + (_FrameTime * _AnimationSpeed)) * _MaskRandomOffset;
+    // no animation
+    rand:f32 = hash(seed);
 
     uv:vec2f = id.xy / vec2f(BUFFER_WIDTH, BUFFER_HEIGHT);
 
@@ -117,12 +146,12 @@ fn CS_CreateMask(SV_DISPATCHTHREADID id :vec3u )-> {
     tex2Dstore(s_Mask, id.xy, _InvertMask ? 1 - result : result);
 }
 
-fn CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u)-> {
+fn CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u) {
     col:vec4f = tex2Dfetch(Common::AcerolaBuffer, id.xy);
 
     hsl:vec3f = Common::RGBtoHSL(col.rgb);
 
-    float output = 0.0f;
+    output:f32 = 0.0f;
 
     if (_SortBy == 0)
         output = hsl.b;
@@ -134,12 +163,12 @@ fn CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u)-> {
     tex2Dstore(s_SortValue, id.xy, output);
 }
 
-fn CS_ClearBuffers(@builtin(global_invocation_id) id: vec3u)-> {
+fn CS_ClearBuffers(@builtin(global_invocation_id) id: vec3u) {
     tex2Dstore(s_SpanLengths, id.xy, 0);
     tex2Dstore(AFXTemp1::s_RenderTex, id.xy, 0);
 }
 
-fn CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u)-> {
+fn CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u) {
     seed:u32 = id.x + BUFFER_WIDTH * id.y + BUFFER_WIDTH * BUFFER_HEIGHT;
     idx:vec2u = 0;
     pos:u32 = 0;
@@ -161,7 +190,7 @@ fn CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u)-> {
         idx = vec2u(pos, id.y);
 #endif
 
-        mask:i32 = tex2Dfetch(Mask, idx).r;
+        mask:i32 = textureSample(AFX_PixelSortMaskTex, Mask, idx).r;
         pos++;
 
         if (mask == 0 || spanLength >= spanLimit) {
@@ -188,7 +217,7 @@ fn CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u)-> {
     }
 }
 
-fn CS_VisualizeSpans(@builtin(global_invocation_id) id: vec3u)-> {
+fn CS_VisualizeSpans(@builtin(global_invocation_id) id: vec3u) {
     int spanLength = tex2Dfetch(SpanLengths, id.xy).r;
 
     if (spanLength >= 1) {
@@ -210,7 +239,7 @@ fn CS_VisualizeSpans(@builtin(global_invocation_id) id: vec3u)-> {
 
 groupshared float gs_PixelSortCache[256];
 
-fn CS_PixelSort(@builtin(global_invocation_id) id: vec3u)-> {
+fn CS_PixelSort(@builtin(global_invocation_id) id: vec3u) {
     const uint spanLength = tex2Dfetch(SpanLengths, id.xy).r;
 
     if (spanLength >= 1) {
@@ -273,9 +302,8 @@ fn CS_PixelSort(@builtin(global_invocation_id) id: vec3u)-> {
     }
 }
 
-// ---------------------- DEBUG -------------------------
 
-fn CS_Composite(@builtin(global_invocation_id) id: vec3u)-> {
+fn CS_Composite(@builtin(global_invocation_id) id: vec3u) {
     if (tex2Dfetch(Mask, id.xy).r == 0) {
         tex2Dstore(AFXTemp1::s_RenderTex, id.xy, tex2Dfetch(Common::AcerolaBuffer, id.xy));
     }

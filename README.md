@@ -43,6 +43,6 @@ Experimenting with particle systems in web-GPU
 
 [WebGPU function references](https://webgpufundamentals.org/webgpu/lessons/webgpu-wgsl-function-reference.html#func-modf)
 
-
+[Reshade Reference](https://github.com/crosire/reshade-shaders/blob/slim/REFERENCE.md)
 
 
