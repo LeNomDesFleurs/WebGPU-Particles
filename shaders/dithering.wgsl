@@ -1,17 +1,18 @@
 struct Uniforms {
     resolution: vec2f,
-    transformMatrix: mat3x3f,
+    matrix: mat3x3f,
 };
 
 struct OurVertexShaderOutput {
     @builtin(position) position: vec4f,
     @location(0) texcoord: vec2f,
 };
+ 
 
-@group(0) @binding(0)
-var<uniform> uniforms: Uniforms;
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
 @group(0) @binding(1) var ourSampler: sampler;
 @group(0) @binding(2) var ourTexture: texture_2d<f32>;
+@group(0) @binding(3) var storage_tex: texture_storage_2d<r32float, read_write>;
 
 @vertex
 fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
@@ -96,5 +97,19 @@ fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
     quantize(output.g, period.g),
     quantize(output.b, period.b));
 
+    let pos = vec2u(fragCoord.xy);
+
+   let mipLevel = 0;
+   const color:vec4f = vec4(1, 1, 1, 1);
+   textureStore(storage_tex, pos, color);
+
+   output.r = textureLoad(storage_tex, pos).r;
+   output.g = textureLoad(storage_tex, pos).g;
+   output.b = textureLoad(storage_tex, pos).b;
+
+
     return vec4f(output, 1.0);
 }
+
+
+

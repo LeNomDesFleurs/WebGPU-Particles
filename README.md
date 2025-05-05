@@ -43,6 +43,10 @@ Experimenting with particle systems in web-GPU
 
 [WebGPU function references](https://webgpufundamentals.org/webgpu/lessons/webgpu-wgsl-function-reference.html#func-modf)
 
+[WebGPU types and functions](https://webgpu.rocks/wgsl/functions/texture/)
+
 [Reshade Reference](https://github.com/crosire/reshade-shaders/blob/slim/REFERENCE.md)
+
+[writing to texture from compute shader](https://gist.github.com/greggman/295e38eeedf5957ac50179308666d98b)
 
 

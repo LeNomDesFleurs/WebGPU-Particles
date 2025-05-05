@@ -1,0 +1,10 @@
+texture storage can only be read_write if it is r32float, r32sint, and r32uint. 
+you cannot use rbga
+
+sorting shader of acerola use the texture, and bind a sampler & a store to it, the store will indeed use only one dimensional values
+
+To output from the compute buffer to the canvas texture, I'll need to pass a writable storageBuffer to shader
+and a dedicated input buffer for the texture
+
+each function seems to be a dedicated compute shader in the sorting shader. how should I pass them ?
+-> probably by defining multiple `passes` with the same `bindgroups`
