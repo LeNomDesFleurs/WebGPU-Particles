@@ -277,17 +277,11 @@ fn CS_PixelSort(@builtin(global_invocation_id) id: vec3u) {
             for (var j:u32 = 1; j < spanLength; j++) {
                 var v:f32 = gs_PixelSortCache[j];
 
-                if (v == saturate(v)) {
-                    if (v < minValue) {
-                        minValue = v;
-                        minIndex = j;
-                    }
-
-                    if (maxValue < v) {
-                        maxValue = v;
-                        maxIndex = j;
-                    }
-                }
+                let valid = v == clamp(v, 0.0, 1.0);
+minValue = select(minValue, v, valid && v < minValue);
+minIndex = select(minIndex, j, valid && v < minValue);
+maxValue = select(maxValue, v, valid && v > maxValue);
+maxIndex = select(maxIndex, j, valid && v > maxValue);
             }
 
             var minIdx:vec2u = vec2u(0);
