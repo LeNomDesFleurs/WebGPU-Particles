@@ -14,7 +14,7 @@ struct Uniforms{
 // 0.5 - 1.0
     _HighThreshold:f32,
 // Invert sorting mask.
-    _InvertMask:i32,
+    _InvertMask:f32,
 // Adjust the random offset of each segment to reduce uniformity.
 // -0.01 - 0.01
     _MaskRandomOffset:f32,
@@ -23,24 +23,24 @@ struct Uniforms{
     _AnimationSpeed:f32,
 // Adjust the max length of sorted spans. This will heavily impact performance.
 // 0 - 256
-    _SpanLimit:i32,
+    _SpanLimit:f32,
 // Adjust the random length offset of limited spans to reduce uniformity.
 // 1-64
-    _MaxRandomOffset:i32,
+    _MaxRandomOffset:f32,
 /*
 What color information to sort by
 0 "Luminance\0"
 1 "Saturation\0"
 2 "Hue\0",
 */
-     _SortBy:i32,
- _ReverseSorting:i32,
+     _SortBy:f32,
+ _ReverseSorting:f32,
 // Adjust gamma of sorted pixels to accentuate them.
 // 0.1 - 5.0
  _SortedGamma:f32,
  _FrameTime:f32, 
- BUFFER_WIDTH:u32,
- BUFFER_HEIGHT:u32,
+ BUFFER_WIDTH:f32,
+ BUFFER_HEIGHT:f32,
 };
 
 @group(0) @binding(0) var<uniform> uni: Uniforms;
@@ -84,12 +84,13 @@ const AFX_EPSILON: f32= 0.001;
     }
 
 fn hash(nn:u32)->f32 {
-    // var n:u32 =nn;
+
+    var n:u32 =nn;
     // integer hash copied from Hugo Elias
 	// n = (n << 13) ^ n;
-    // n = n * (n * n * 15731 + u32(0x789221)) + u32(0x1376312589);
+    // n = n * (n * n * 15731 + u32(0x789221)) + u64(0x1376312589);
     // return f32(n & u32(0x7fffffff)) / f32(0x7fffffff);
-    return 2.f;
+    return 0.2f;
 }
 
 
@@ -103,7 +104,7 @@ fn CS_CreateMask(@builtin(global_invocation_id) id: vec3u) {
     // var pixelSize:vec2f = vec2f(f32(uni.BUFFER_HEIGHT), f32(uni.BUFFER_WIDTH));
 
 // #if AFX_HORIZONTAL_SORT == 0
-    var seed: u32  = u32(id.x * uni.BUFFER_WIDTH);
+    var seed: u32  = id.x * u32(uni.BUFFER_WIDTH);
 // #else
     // seed: u32 = id.y * BUFFER_HEIGHT;
 // #endif
@@ -127,7 +128,6 @@ fn CS_CreateMask(@builtin(global_invocation_id) id: vec3u) {
     var result:i32 = 1;
 
     if (l < uni._LowThreshold || uni._HighThreshold < l)
-    // if (l < 0.1 || 0.9 < l)
        { result = 0;}
     
     var r:i32 = result;
@@ -137,17 +137,29 @@ fn CS_CreateMask(@builtin(global_invocation_id) id: vec3u) {
         r = 1-result;
     }
 
-    textureStore(s_Mask, id.xy, vec4(r));
-        // var color = textureLoad(inputTexture, id.xy, 0);
-        // textureStore(outputTexture, id.xy, color);
-        // color.x = f32(textureLoad(s_Mask, id.xy).r);
-        // var color:vec4f;
-        // color.x = f32(r);
-        // color.y = 0;
-        // color.z = 0;
-        // textureStore(outputTexture, id.xy, color);
+        textureStore(s_Mask, id.xy, vec4(r));
+        
 }
 
+@compute @workgroup_size(1, 1)
+fn CS_VisualizeSpans(@builtin(global_invocation_id) id: vec3u) {
+    var spanLength:u32 = textureLoad(s_SpanLengths, id.xy).r;
+
+    if (spanLength >= 1) {
+        var seed:u32 = id.x + u32(uni.BUFFER_WIDTH) * id.y + u32(uni.BUFFER_WIDTH) * u32(uni.BUFFER_HEIGHT);
+        var c:vec4f = vec4f(hash(seed), hash(seed * 2), hash(seed * 3), 1.0f);
+
+        for (var i:u32 = 0; i < spanLength; i++) {
+// #if AFX_HORIZONTAL_SORT == 0
+            var idx:vec2u = vec2u(id.x, id.y + i);
+// #else
+//             uint2 idx = uint2(id.x + i, id.y);
+// #endif
+
+            textureStore(outputTexture, idx, vec4(c));
+        }
+    }
+}
 
 @compute @workgroup_size(8, 8)
 fn CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u) {
@@ -165,16 +177,18 @@ fn CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u) {
        { output = hsl.r;}
 
     textureStore(s_SortValue, id.xy, vec4(output));
+    
 }
 
 @compute @workgroup_size(8, 8)
 fn CS_ClearBuffers(@builtin(global_invocation_id) id: vec3u) {
     textureStore(s_SpanLengths, id.xy, vec4(0));
     // textureStore(AFXTemp1::s_RenderTex, id.xy, 0);
+    
 }
 
 
-@compute @workgroup_size(8, 8)
+@compute @workgroup_size(1, 1)
 fn CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u) {
     var seed:u32 = id.x + u32(uni.BUFFER_WIDTH) * id.y + u32(uni.BUFFER_WIDTH) * u32(uni.BUFFER_HEIGHT);
     var idx:vec2u = vec2u(0);
@@ -224,6 +238,9 @@ if (mask==1) {masking = spanLength + 1;} else {masking = spanLength;}
 // #endif
         textureStore(s_SpanLengths, idx, vec4(spanLength, 0, 0, 0));
     }
+
+
+    
 }
 
 
@@ -274,18 +291,18 @@ var gs_PixelSortCache:array<f32, 256>;
             var minIdx:vec2u = vec2u(0);
             var maxIdx:vec2u = vec2u(0);
 
-            if (uni._ReverseSorting==1) {
-                minIdx = id.xy + i * direction;
-                maxIdx = id.xy + (spanLength - i - 1) * direction;
-            } else {
+            // if (uni._ReverseSorting==1) {
+            //     minIdx = id.xy + i * direction;
+            //     maxIdx = id.xy + (spanLength - i - 1) * direction;
+            // } else {
                 minIdx = id.xy + (spanLength - i - 1) * direction;
                 maxIdx = id.xy + i * direction;
-            }
+            // }
             
             var minColorIdx:vec2u = id.xy + minIndex * direction;
             var maxColorIdx:vec2u = id.xy + maxIndex * direction;
             
-            // load non sorted pixels
+            // load sorted pixels
             var color = pow(abs(textureLoad(inputTexture, minColorIdx.xy, 0)),vec4f(uni._SortedGamma));
             textureStore(outputTexture, minIdx.xy, color);
             color = pow(abs(textureLoad(inputTexture, maxColorIdx.xy, 0)), vec4f(uni._SortedGamma));
@@ -303,12 +320,9 @@ var gs_PixelSortCache:array<f32, 256>;
 
 @compute @workgroup_size(8, 8)
 fn CS_Composite(@builtin(global_invocation_id) id: vec3u) {
-    // if (textureLoad(s_Mask, id.xy).r == 0) {
-        var color:vec4f; // = textureLoad(inputTexture, id.xy, 0);
-        // textureStore(outputTexture, id.xy, color);
-        color.x = f32(textureLoad(s_Mask, id.xy).r);
-        color.y = 0;
-        color.z = 0;
+    //load non sorted pixels
+    if (textureLoad(s_Mask, id.xy).r == 0) {
+        var color:vec4f = textureLoad(inputTexture, id.xy, 0);
         textureStore(outputTexture, id.xy, color);
-    // }
+    }
 }

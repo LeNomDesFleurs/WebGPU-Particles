@@ -257,6 +257,12 @@ async function init() {
         compute: { module: sortingModule, entryPoint: "CS_Composite" },
     })
 
+    const visualizePipeline = device.createComputePipeline({
+        label: 'tuto',
+        layout: pipelineLayout,
+        compute: { module: sortingModule, entryPoint: "CS_VisualizeSpans" },
+    })
+
     function draw(p = 0.0) {
 
         const outputTexture = context.getCurrentTexture();
@@ -327,6 +333,8 @@ async function init() {
         pass.dispatchWorkgroups(width / 8, height / 8);
         pass.setPipeline(identifyspanPipeline)
         pass.dispatchWorkgroups(width, height);
+        // pass.setPipeline(visualizePipeline)
+        // pass.dispatchWorkgroups(width, height);
         pass.setPipeline(pixelsortPipeline)
         pass.dispatchWorkgroups(width, height);
         pass.setPipeline(compositePipeline)
