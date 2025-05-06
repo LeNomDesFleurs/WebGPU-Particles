@@ -140,6 +140,7 @@ fn CS_CreateMask(@builtin(global_invocation_id) id: vec3u) {
     textureStore(s_Mask, id.xy, vec4(r));
     
     CS_CreateSortValues(id);
+    CS_ClearBuffers(id);
 }
 
 @compute @workgroup_size(1, 1)
@@ -181,8 +182,8 @@ fn CS_CreateSortValues( id: vec3u) {
     
 }
 
-@compute @workgroup_size(8, 8)
-fn CS_ClearBuffers(@builtin(global_invocation_id) id: vec3u) {
+// @compute @workgroup_size(8, 8)
+fn CS_ClearBuffers(id: vec3u) {
     textureStore(s_SpanLengths, id.xy, vec4(0));
     
 }
@@ -244,11 +245,12 @@ if (mask==1) {masking = spanLength + 1;} else {masking = spanLength;}
 }
 
 
+var<workgroup> gs_PixelSortCache:array<f32, 1000>;
 
 @compute @workgroup_size(8, 8)
 fn CS_PixelSort(@builtin(global_invocation_id) id: vec3u) {
 
-var gs_PixelSortCache:array<f32, 1000>;
+
 
     let spanLength:u32 = u32(textureLoad(s_SpanLengths, id.xy).r);
 
@@ -308,18 +310,20 @@ var gs_PixelSortCache:array<f32, 1000>;
             color = pow(abs(textureLoad(inputTexture, maxColorIdx.xy, 0)), vec4f(uni._SortedGamma));
             textureStore(outputTexture, maxIdx.xy, color);
 
+
             gs_PixelSortCache[minIndex] = 2;
             gs_PixelSortCache[maxIndex] = -2;
             minValue = 1;
             maxValue = -1;
         }
     }
+            CS_Composite(id);
 }
 
 
 
-@compute @workgroup_size(8, 8)
-fn CS_Composite(@builtin(global_invocation_id) id: vec3u) {
+// @compute @workgroup_size(8, 8)
+fn CS_Composite(id: vec3u) {
     // load non sorted pixels
     if (textureLoad(s_Mask, id.xy).r == 0) {
         var color:vec4f = textureLoad(inputTexture, id.xy, 0);

@@ -233,11 +233,11 @@ async function init() {
     //     },
     // })
 
-    const clearbufferPipeline = device.createComputePipeline({
-        label: 'tuto',
-        layout: pipelineLayout,
-        compute: { module: sortingModule, entryPoint: "CS_ClearBuffers" },
-    })
+    // const clearbufferPipeline = device.createComputePipeline({
+    //     label: 'tuto',
+    //     layout: pipelineLayout,
+    //     compute: { module: sortingModule, entryPoint: "CS_ClearBuffers" },
+    // })
 
 
     const identifyspanPipeline = device.createComputePipeline({
@@ -251,11 +251,11 @@ async function init() {
         layout: pipelineLayout,
         compute: { module: sortingModule, entryPoint: "CS_PixelSort" },
     })
-    const compositePipeline = device.createComputePipeline({
-        label: 'tuto',
-        layout: pipelineLayout,
-        compute: { module: sortingModule, entryPoint: "CS_Composite" },
-    })
+    // const compositePipeline = device.createComputePipeline({
+    //     label: 'tuto',
+    //     layout: pipelineLayout,
+    //     compute: { module: sortingModule, entryPoint: "CS_Composite" },
+    // })
 
     const visualizePipeline = device.createComputePipeline({
         label: 'tuto',
@@ -332,16 +332,16 @@ async function init() {
         pass.dispatchWorkgroups(width / 8, height / 8);
         // pass.setPipeline(createsortvaluePipeline)
         // pass.dispatchWorkgroups(width / 8, height / 8);
-        pass.setPipeline(clearbufferPipeline)
-        pass.dispatchWorkgroups(width / 8, height / 8);
+        // pass.setPipeline(clearbufferPipeline)
+        // pass.dispatchWorkgroups(width / 8, height / 8);
         pass.setPipeline(identifyspanPipeline)
         pass.dispatchWorkgroups(width/8, height/8);
         // pass.setPipeline(visualizePipeline)
         // pass.dispatchWorkgroups(width, height);
         pass.setPipeline(pixelsortPipeline)
         pass.dispatchWorkgroups(width/8, height/8);
-        pass.setPipeline(compositePipeline)
-        pass.dispatchWorkgroups(width / 8, height / 8);
+        // pass.setPipeline(compositePipeline)
+        // pass.dispatchWorkgroups(width / 8, height / 8);
         pass.end()
 
         const commandBuffer = encoder.finish()
