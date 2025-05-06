@@ -1,5 +1,5 @@
 import { mat3 } from "./mat3.js"
-import { loadImageBitmap, loadWGSL } from "./utils.js"
+import { loadImageBitmap, loadWGSL, throttle } from "./utils.js"
 
 let IMAGE_URL = ''
 
@@ -352,17 +352,18 @@ async function init() {
         document.getElementById(id)
     )
 
-    rgbSliders.forEach((slider) => {
-        slider.addEventListener('input', () => {
-            draw(
-                parseInt(rgbSliders[0].value) / 255.0,
-                parseFloat(rgbSliders[1].value) / 255.0,
-                parseFloat(rgbSliders[2].value) / 255.0,
-                // parseFloat(rgbSliders[3].value) / 255.0
-            )
-        })
-    })
+    const handleSliderChange = throttle(() => {
+        draw(
+            parseInt(rgbSliders[0].value) / 255.0,
+            parseFloat(rgbSliders[1].value) / 255.0,
+            parseFloat(rgbSliders[2].value) / 255.0,
+            // parseFloat(rgbSliders[3].value) / 255.0
+        )
+    }, 200);
 
+    rgbSliders.forEach((slider) => {
+        slider.addEventListener('input', handleSliderChange)
+    })
 
 //  const rot = document.getElementById('control-p');
 //     rot.addEventListener('input', () => {
