@@ -285,9 +285,10 @@ async function init() {
         _InvertMaskValue.set([0]);
         _MaskRandomOffsetValue.set([0.0]);
         _AnimationSpeedValue.set([0.0]);
+        // max 1000, else, got to change the cache size in the shader
         _SpanLimitValue.set([1000]);
         _MaxRandomOffsetValue.set([1]);
-        _SortByValue.set([1]);
+        _SortByValue.set([0]);
         _ReverseSortingValue.set([0]);
         _SortedGammaValue.set([1.0]);
         _FrameTimeValue.set([0.0]);
