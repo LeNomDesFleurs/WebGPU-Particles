@@ -280,14 +280,14 @@ async function init() {
             ],
         })
 
-        _LowThresholdValue.set([0.1]);
+        _LowThresholdValue.set([0.5]);
         _HighThresholdValue.set([0.9]);
         _InvertMaskValue.set([0]);
         _MaskRandomOffsetValue.set([0.0]);
         _AnimationSpeedValue.set([0.0]);
-        _SpanLimitValue.set([64]);
+        _SpanLimitValue.set([200]);
         _MaxRandomOffsetValue.set([1]);
-        _SortByValue.set([2]);
+        _SortByValue.set([1]);
         _ReverseSortingValue.set([0]);
         _SortedGammaValue.set([1.0]);
         _FrameTimeValue.set([0.0]);
@@ -321,8 +321,10 @@ async function init() {
 
         const pass = encoder.beginComputePass();
 
-        let width = canvas.width;
-        let height = canvas.height;
+        // let width = canvas.width;
+        let width = 1000;
+        // let height = canvas.height;
+        let height = 1000;
 
         pass.setBindGroup(0, bindGroup)
         pass.setPipeline(createMaskPipeline)

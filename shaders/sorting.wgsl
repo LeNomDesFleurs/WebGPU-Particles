@@ -169,9 +169,9 @@ fn CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u) {
 
     var output:f32 = 0.0f;
 
-    if (uni._SortBy == 0)
+    if (uni._SortBy == 0.0)
         {output = hsl.b;}
-    else if (uni._SortBy == 1)
+    else if (uni._SortBy == 1.0)
        { output = hsl.g;}
     else
        { output = hsl.r;}
@@ -320,7 +320,7 @@ var gs_PixelSortCache:array<f32, 256>;
 
 @compute @workgroup_size(8, 8)
 fn CS_Composite(@builtin(global_invocation_id) id: vec3u) {
-    //load non sorted pixels
+    // load non sorted pixels
     if (textureLoad(s_Mask, id.xy).r == 0) {
         var color:vec4f = textureLoad(inputTexture, id.xy, 0);
         textureStore(outputTexture, id.xy, color);
