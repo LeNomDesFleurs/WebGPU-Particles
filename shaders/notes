@@ -8,3 +8,5 @@ and a dedicated input buffer for the texture
 
 each function seems to be a dedicated compute shader in the sorting shader. how should I pass them ?
 -> probably by defining multiple `passes` with the same `bindgroups`
+
+may need to declare the input texture in the frame to avoid destruction. might also be the compute shader that breaks ?

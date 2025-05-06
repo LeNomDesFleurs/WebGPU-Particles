@@ -5,61 +5,45 @@ const AFX_HORIZONTAL_SORT:i32 = 0;
 
 // -------------------UNIFORMS
 
+
+struct Uniforms{
 // Adjust the threshold at which dark pixels are omitted from the mask.
 // 0.0 - 0.5
-const _LowThreshold:f32 = 0.1f;
-
+    _LowThreshold:f32,
 // Adjust the threshold at which bright pixels are omitted from the mask.
 // 0.5 - 1.0
-const _HighThreshold:f32 = 0.72f;
-
+    _HighThreshold:f32,
 // Invert sorting mask.
-const _InvertMask:bool = false;
-
+    _InvertMask:i32,
 // Adjust the random offset of each segment to reduce uniformity.
 // -0.01 - 0.01
-const _MaskRandomOffset:f32 = 0.0f;
-
+    _MaskRandomOffset:f32,
 // Animate the random offset
 // 0 - 30
-const _AnimationSpeed:f32  = 0.0f;
-
-
+    _AnimationSpeed:f32,
 // Adjust the max length of sorted spans. This will heavily impact performance.
 // 0 - 256
-const _SpanLimit:i32 = 64;
-
+    _SpanLimit:i32,
 // Adjust the random length offset of limited spans to reduce uniformity.
 // 1-64
-const _MaxRandomOffset:i32 = 1;
-
+    _MaxRandomOffset:i32,
 /*
 What color information to sort by
 0 "Luminance\0"
 1 "Saturation\0"
-2 "Hue\0";
+2 "Hue\0",
 */
-const _SortBy:i32 = 2;
-
-const _ReverseSorting:bool = false;
-
+     _SortBy:i32,
+ _ReverseSorting:i32,
 // Adjust gamma of sorted pixels to accentuate them.
 // 0.1 - 5.0
-const _SortedGamma:f32 = 1.0f;
+ _SortedGamma:f32,
+ _FrameTime:f32, 
+ BUFFER_WIDTH:u32,
+ BUFFER_HEIGHT:u32,
+};
 
-const _FrameTime:f32 = 0.0f; 
-// < source = "frametime"; >;
-
-// rgba8uint
-// rgba8sint
-// rgba8snorm
-
-// rgba16sint
-// rgba8sint
-
-const BUFFER_WIDTH:u32=1000;
-const BUFFER_HEIGHT:u32=1000;
-
+@group(0) @binding(0) var<uniform> uni: Uniforms;
 @group(0) @binding(1) var inputSampler: sampler;
 @group(0) @binding(2) var inputTexture: texture_2d<f32>;
 @group(0) @binding(3) var outputTexture: texture_storage_2d<rgba8unorm, write>;
@@ -116,43 +100,52 @@ fn hash(nn:u32)->f32 {
 
 @compute @workgroup_size(8, 8)
 fn CS_CreateMask(@builtin(global_invocation_id) id: vec3u) {
-    var pixelSize:vec2f = vec2f(f32(BUFFER_HEIGHT), f32(BUFFER_WIDTH));
+    // var pixelSize:vec2f = vec2f(f32(uni.BUFFER_HEIGHT), f32(uni.BUFFER_WIDTH));
 
 // #if AFX_HORIZONTAL_SORT == 0
-    var seed: u32  = u32(id.x * BUFFER_WIDTH);
+    var seed: u32  = u32(id.x * uni.BUFFER_WIDTH);
 // #else
     // seed: u32 = id.y * BUFFER_HEIGHT;
 // #endif
 
     // rand:f32 = hash(seed + (_FrameTime * _AnimationSpeed)) * _MaskRandomOffset;
     // no animation
-    var rand:f32 = hash(seed);
+    // var rand:f32 = 0.f;//hash(seed);
 
-    var uv:vec2u = vec2u(vec2f(id.xy) / vec2f(f32(BUFFER_HEIGHT), f32(BUFFER_WIDTH)));
+    // var uv:vec2u = vec2u(vec2f(id.xy) / vec2f(f32(uni.BUFFER_HEIGHT), f32(uni.BUFFER_WIDTH)));
     
 // #if AFX_HORIZONTAL_SORT == 0
-    uv.y = uv.y + u32(rand);
+    // uv.y = uv.y + u32(rand);
 // #else
     // uv.x += rand;
 // #endif
 
-    var col: vec4f = textureLoad(inputTexture, uv, u32(0));
+    var col: vec4f = textureLoad(inputTexture, id.xy, u32(0));
 
     var l:f32 = Luminance(col.rgb);
 
     var result:i32 = 1;
-    if (l < _LowThreshold || _HighThreshold < l)
+
+    if (l < uni._LowThreshold || uni._HighThreshold < l)
+    // if (l < 0.1 || 0.9 < l)
        { result = 0;}
     
-    var r:i32;
-    if (_InvertMask)
+    var r:i32 = result;
+
+    if (uni._InvertMask==1)
     {
         r = 1-result;
-    } else {
-        r = result;
     }
 
     textureStore(s_Mask, id.xy, vec4(r));
+        // var color = textureLoad(inputTexture, id.xy, 0);
+        // textureStore(outputTexture, id.xy, color);
+        // color.x = f32(textureLoad(s_Mask, id.xy).r);
+        // var color:vec4f;
+        // color.x = f32(r);
+        // color.y = 0;
+        // color.z = 0;
+        // textureStore(outputTexture, id.xy, color);
 }
 
 
@@ -164,9 +157,9 @@ fn CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u) {
 
     var output:f32 = 0.0f;
 
-    if (_SortBy == 0)
+    if (uni._SortBy == 0)
         {output = hsl.b;}
-    else if (_SortBy == 1)
+    else if (uni._SortBy == 1)
        { output = hsl.g;}
     else
        { output = hsl.r;}
@@ -183,19 +176,19 @@ fn CS_ClearBuffers(@builtin(global_invocation_id) id: vec3u) {
 
 @compute @workgroup_size(8, 8)
 fn CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u) {
-    var seed:u32 = id.x + u32(BUFFER_WIDTH) * id.y + u32(BUFFER_WIDTH) * u32(BUFFER_HEIGHT);
+    var seed:u32 = id.x + u32(uni.BUFFER_WIDTH) * id.y + u32(uni.BUFFER_WIDTH) * u32(uni.BUFFER_HEIGHT);
     var idx:vec2u = vec2u(0);
     var pos:u32 = 0;
     var spanStartIndex:u32 = 0;
     var spanLength:u32 = 0;
 
 // #if AFX_HORIZONTAL_SORT == 0
-    var screenLimit:u32 = u32(BUFFER_HEIGHT);
+    var screenLimit:u32 = u32(uni.BUFFER_HEIGHT);
 // #else
     // screenLimit:u32 = BUFFER_WIDTH;
 // #endif
 
-    var spanLimit:u32 = u32(f32(_SpanLimit) - (hash(seed) * f32(_MaxRandomOffset)));
+    var spanLimit:u32 = u32(f32(uni._SpanLimit) - (hash(seed) * f32(uni._MaxRandomOffset)));
 
     while (pos < screenLimit) {
 // #if AFX_HORIZONTAL_SORT == 0
@@ -281,7 +274,7 @@ var gs_PixelSortCache:array<f32, 256>;
             var minIdx:vec2u = vec2u(0);
             var maxIdx:vec2u = vec2u(0);
 
-            if (_ReverseSorting) {
+            if (uni._ReverseSorting==1) {
                 minIdx = id.xy + i * direction;
                 maxIdx = id.xy + (spanLength - i - 1) * direction;
             } else {
@@ -293,9 +286,9 @@ var gs_PixelSortCache:array<f32, 256>;
             var maxColorIdx:vec2u = id.xy + maxIndex * direction;
             
             // load non sorted pixels
-            var color = pow(abs(textureLoad(inputTexture, minColorIdx.xy, 0)),vec4f(_SortedGamma));
+            var color = pow(abs(textureLoad(inputTexture, minColorIdx.xy, 0)),vec4f(uni._SortedGamma));
             textureStore(outputTexture, minIdx.xy, color);
-            color = pow(abs(textureLoad(inputTexture, maxColorIdx.xy, 0)), vec4f(_SortedGamma));
+            color = pow(abs(textureLoad(inputTexture, maxColorIdx.xy, 0)), vec4f(uni._SortedGamma));
             textureStore(outputTexture, maxIdx.xy, color);
 
             gs_PixelSortCache[minIndex] = 2;
@@ -310,8 +303,12 @@ var gs_PixelSortCache:array<f32, 256>;
 
 @compute @workgroup_size(8, 8)
 fn CS_Composite(@builtin(global_invocation_id) id: vec3u) {
-    if (textureLoad(s_Mask, id.xy).r == 0) {
-        var color = textureLoad(inputTexture, id.xy, 0);
+    // if (textureLoad(s_Mask, id.xy).r == 0) {
+        var color:vec4f; // = textureLoad(inputTexture, id.xy, 0);
+        // textureStore(outputTexture, id.xy, color);
+        color.x = f32(textureLoad(s_Mask, id.xy).r);
+        color.y = 0;
+        color.z = 0;
         textureStore(outputTexture, id.xy, color);
-    }
+    // }
 }

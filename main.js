@@ -20,13 +20,13 @@ async function init() {
 
 
 
-//     const img = document.createElement("img");
-//     img.src = new URL(
-//     "rose.png",
-//     import.meta.url,
-//   ).toString();
-//   await img.decode();
-//   const imageBitmap = await loadImageBitmap(img);
+    //     const img = document.createElement("img");
+    //     img.src = new URL(
+    //     "rose.png",
+    //     import.meta.url,
+    //   ).toString();
+    //   await img.decode();
+    //   const imageBitmap = await loadImageBitmap(img);
 
     IMAGE_URL = 'rose.jpg';
     // await img.decode();
@@ -104,9 +104,8 @@ async function init() {
     });
 
 
-    // (colors + resolution + transformation matrix)
     // must be at least 80 bytes
-    const uniformBufferSize = ((4 + 2 + 12) * 4) + 8; // TODO CHECK VALUE
+    const uniformBufferSize = (13 * 4); // TODO CHECK VALUE
     const uniformBuffer = device.createBuffer({
         label: 'uniforms',
         size: uniformBufferSize,
@@ -115,14 +114,34 @@ async function init() {
 
     const uniformValues = new Float32Array(uniformBufferSize / 4);
 
-    // offsets to the various uniform values in float32 indices
 
-    const kResolutionOffset = 0;
-    const kMatrixOffset = 4;
+    const _LowThreshold = 0;
+    const _HighThreshold = 1;
+    const _InvertMask = 2;
+    const _MaskRandomOffset = 3;
+    const _AnimationSpeed = 4;
+    const _SpanLimit = 5;
+    const _MaxRandomOffset = 6;
+    const _SortBy = 7;
+    const _ReverseSorting = 8;
+    const _SortedGamma = 9;
+    const _FrameTime = 10;
+    const BUFFER_WIDTH = 11;
+    const BUFFER_HEIGHT = 12;
 
-    const resolutionValue = uniformValues.subarray(kResolutionOffset, kResolutionOffset + 4);
-    const matrixValue = uniformValues.subarray(kMatrixOffset, kMatrixOffset + 12);
-
+    let _LowThresholdValue = uniformValues.subarray(_LowThreshold, _HighThreshold);
+    let _HighThresholdValue = uniformValues.subarray(_HighThreshold, _InvertMask);
+    let _InvertMaskValue = uniformValues.subarray(_InvertMask, _MaskRandomOffset);
+    let _MaskRandomOffsetValue = uniformValues.subarray(_MaskRandomOffset,_AnimationSpeed);
+    let _AnimationSpeedValue = uniformValues.subarray(_AnimationSpeed, _SpanLimit);
+    let _SpanLimitValue = uniformValues.subarray(_SpanLimit, _MaxRandomOffset);
+    let _MaxRandomOffsetValue = uniformValues.subarray(_MaxRandomOffset, _SortBy);
+    let _SortByValue = uniformValues.subarray(_SortBy, _ReverseSorting);
+    let _ReverseSortingValue = uniformValues.subarray(_ReverseSorting, _SortedGamma);
+    let _SortedGammaValue = uniformValues.subarray(_SortedGamma, _FrameTime);
+    let _FrameTimeValue = uniformValues.subarray(_FrameTime, BUFFER_WIDTH);
+    let BUFFER_WIDTHValue = uniformValues.subarray(BUFFER_WIDTH, BUFFER_HEIGHT);
+    let BUFFER_HEIGHTValue = uniformValues.subarray(BUFFER_HEIGHT, BUFFER_HEIGHT + 4);
 
     const inputTexture = device.createTexture({
         label: "inputTexture",
@@ -160,10 +179,11 @@ async function init() {
         usage: GPUTextureUsage.STORAGE_BINDING
     });
 
-    const outputTexture = context.getCurrentTexture();
-
+    
     const sampler = device.createSampler();
-
+    
+    
+    const outputTexture = context.getCurrentTexture();
     const bindGroup = device.createBindGroup({
         label: 'tuto',
         layout: bindGroupLayout,
@@ -239,44 +259,61 @@ async function init() {
 
     function draw(p = 0.0) {
 
+        const outputTexture = context.getCurrentTexture();
+        const bindGroup = device.createBindGroup({
+            label: 'tuto',
+            layout: bindGroupLayout,
+            entries: [
+                { binding: 0, resource: { buffer: uniformBuffer, } },
+                { binding: 1, resource: sampler },
+                { binding: 2, resource: inputTexture.createView() },
+                { binding: 3, resource: outputTexture.createView() },
+                { binding: 4, resource: storageMask.createView() },
+                { binding: 5, resource: storageSortValue.createView() },
+                { binding: 6, resource: storageSpanLenght.createView() },
+            ],
+        })
+
+        _LowThresholdValue.set([0.1]);
+        _HighThresholdValue.set([0.9]);
+        _InvertMaskValue.set([0]);
+        _MaskRandomOffsetValue.set([0.0]);
+        _AnimationSpeedValue.set([0.0]);
+        _SpanLimitValue.set([64]);
+        _MaxRandomOffsetValue.set([1]);
+        _SortByValue.set([2]);
+        _ReverseSortingValue.set([0]);
+        _SortedGammaValue.set([1.0]);
+        _FrameTimeValue.set([0.0]);
+        BUFFER_WIDTHValue.set([canvas.width]);
+        BUFFER_HEIGHTValue.set([canvas.height]);
+
+
+        // let angle = p * 180.
+        // let radians = angle * (Math.PI / 180.);
+
+        // const rotationMatrix = mat3.rotation(radians);
+        //Goal is to rescale the rectangle once rotated to avoid cropping
+        // const scale_value = mat3.rotationScale(radians, canvas.width, canvas.height);
+
+        // const scalingMatrix = mat3.scaling([scale_value, scale_value]);
+        // const matrix = mat3.multiply(rotationMatrix, scalingMatrix);
+        // matrixValue.set([
+        //     ...matrix.slice(0, 3), 0,
+        //     ...matrix.slice(3, 6), 0,
+        //     ...matrix.slice(6, 9), 0,
+        // ]);
+        // resolutionValue.set([canvas.width, canvas.height]);
 
         const encoder = device.createCommandEncoder({ label: 'tuto' })
-
-        let angle = p * 180.
-        let radians = angle * (Math.PI / 180.);
-
-        const rotationMatrix = mat3.rotation(radians);
-        //Goal is to rescale the rectangle once rotated to avoid cropping
-        const scale_value = mat3.rotationScale(radians, canvas.width, canvas.height);
-
-        const scalingMatrix = mat3.scaling([scale_value, scale_value]);
-        const matrix = mat3.multiply(rotationMatrix, scalingMatrix);
-        matrixValue.set([
-            ...matrix.slice(0, 3), 0,
-            ...matrix.slice(3, 6), 0,
-            ...matrix.slice(6, 9), 0,
-        ]);
-        resolutionValue.set([canvas.width, canvas.height]);
-
         device.queue.writeBuffer(uniformBuffer, 0, uniformValues);
         device.queue.copyExternalImageToTexture(
-            { source: source},
-            {texture: inputTexture },
+            { source: source },
+            { texture: inputTexture },
             { width: source.width, height: source.height },
         );
 
-        const pass = encoder.beginComputePass(); 
-        // encoder.beginRenderPass({
-        //     label: 'tuto',
-        //     colorAttachments: [
-        //         {
-        //             view: context.getCurrentTexture().createView(),
-        //             clearValue: [1.0, 1.0, 1.0, 1],
-        //             loadOp: 'clear',
-        //             storeOp: 'store',
-        //         },
-        //     ],
-        // })
+        const pass = encoder.beginComputePass();
 
         let width = canvas.width;
         let height = canvas.height;
@@ -285,7 +322,7 @@ async function init() {
         pass.setPipeline(createMaskPipeline)
         pass.dispatchWorkgroups(width / 8, height / 8);
         pass.setPipeline(createsortvaluePipeline)
-        pass.dispatchWorkgroups(width/8, height/8);
+        pass.dispatchWorkgroups(width / 8, height / 8);
         pass.setPipeline(clearbufferPipeline)
         pass.dispatchWorkgroups(width / 8, height / 8);
         pass.setPipeline(identifyspanPipeline)
