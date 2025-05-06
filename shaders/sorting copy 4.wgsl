@@ -137,9 +137,8 @@ fn CS_CreateMask(@builtin(global_invocation_id) id: vec3u) {
         r = 1-result;
     }
 
-    textureStore(s_Mask, id.xy, vec4(r));
-    
-    CS_CreateSortValues(id);
+        textureStore(s_Mask, id.xy, vec4(r));
+        
 }
 
 @compute @workgroup_size(1, 1)
@@ -162,8 +161,8 @@ fn CS_VisualizeSpans(@builtin(global_invocation_id) id: vec3u) {
     }
 }
 
-// @compute @workgroup_size(8, 8)
-fn CS_CreateSortValues( id: vec3u) {
+@compute @workgroup_size(8, 8)
+fn CS_CreateSortValues(@builtin(global_invocation_id) id: vec3u) {
     var col:vec4f = textureLoad(inputTexture, id.xy, u32(0));
 
     var hsl:vec3f = RGBtoHSL(col.rgb);
@@ -184,11 +183,12 @@ fn CS_CreateSortValues( id: vec3u) {
 @compute @workgroup_size(8, 8)
 fn CS_ClearBuffers(@builtin(global_invocation_id) id: vec3u) {
     textureStore(s_SpanLengths, id.xy, vec4(0));
+    // textureStore(AFXTemp1::s_RenderTex, id.xy, 0);
     
 }
 
 
-@compute @workgroup_size(8, 8)
+@compute @workgroup_size(1, 1)
 fn CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u) {
     var seed:u32 = id.x + u32(uni.BUFFER_WIDTH) * id.y + u32(uni.BUFFER_WIDTH) * u32(uni.BUFFER_HEIGHT);
     var idx:vec2u = vec2u(0);
@@ -245,7 +245,7 @@ if (mask==1) {masking = spanLength + 1;} else {masking = spanLength;}
 
 
 
-@compute @workgroup_size(8, 8)
+@compute @workgroup_size(1, 1)
 fn CS_PixelSort(@builtin(global_invocation_id) id: vec3u) {
 
 var gs_PixelSortCache:array<f32, 1000>;

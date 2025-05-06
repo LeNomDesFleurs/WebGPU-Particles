@@ -224,14 +224,14 @@ async function init() {
         },
     })
 
-    const createsortvaluePipeline = device.createComputePipeline({
-        label: 'tuto',
-        layout: pipelineLayout,
-        compute: {
-            module: sortingModule,
-            entryPoint: "CS_CreateSortValues",
-        },
-    })
+    // const createsortvaluePipeline = device.createComputePipeline({
+    //     label: 'tuto',
+    //     layout: pipelineLayout,
+    //     compute: {
+    //         module: sortingModule,
+    //         entryPoint: "CS_CreateSortValues",
+    //     },
+    // })
 
     const clearbufferPipeline = device.createComputePipeline({
         label: 'tuto',
@@ -330,16 +330,16 @@ async function init() {
         pass.setBindGroup(0, bindGroup)
         pass.setPipeline(createMaskPipeline)
         pass.dispatchWorkgroups(width / 8, height / 8);
-        pass.setPipeline(createsortvaluePipeline)
-        pass.dispatchWorkgroups(width / 8, height / 8);
+        // pass.setPipeline(createsortvaluePipeline)
+        // pass.dispatchWorkgroups(width / 8, height / 8);
         pass.setPipeline(clearbufferPipeline)
         pass.dispatchWorkgroups(width / 8, height / 8);
         pass.setPipeline(identifyspanPipeline)
-        pass.dispatchWorkgroups(width, height);
+        pass.dispatchWorkgroups(width/8, height/8);
         // pass.setPipeline(visualizePipeline)
         // pass.dispatchWorkgroups(width, height);
         pass.setPipeline(pixelsortPipeline)
-        pass.dispatchWorkgroups(width, height);
+        pass.dispatchWorkgroups(width/8, height/8);
         pass.setPipeline(compositePipeline)
         pass.dispatchWorkgroups(width / 8, height / 8);
         pass.end()
@@ -359,7 +359,7 @@ async function init() {
             parseFloat(rgbSliders[2].value) / 255.0,
             // parseFloat(rgbSliders[3].value) / 255.0
         )
-    }, 200);
+    }, 30);
 
     rgbSliders.forEach((slider) => {
         slider.addEventListener('input', handleSliderChange)
