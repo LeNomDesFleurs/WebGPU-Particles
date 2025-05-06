@@ -263,7 +263,7 @@ async function init() {
         compute: { module: sortingModule, entryPoint: "CS_VisualizeSpans" },
     })
 
-    function draw(p = 0.0) {
+    function draw(p = 0.0, min = 0.0, max = 1.0) {
 
         const outputTexture = context.getCurrentTexture();
         const bindGroup = device.createBindGroup({
@@ -280,12 +280,12 @@ async function init() {
             ],
         })
 
-        _LowThresholdValue.set([0.5]);
-        _HighThresholdValue.set([0.9]);
+        _LowThresholdValue.set([min]);
+        _HighThresholdValue.set([max]);
         _InvertMaskValue.set([0]);
         _MaskRandomOffsetValue.set([0.0]);
         _AnimationSpeedValue.set([0.0]);
-        _SpanLimitValue.set([200]);
+        _SpanLimitValue.set([1000]);
         _MaxRandomOffsetValue.set([1]);
         _SortByValue.set([1]);
         _ReverseSortingValue.set([0]);
@@ -347,11 +347,28 @@ async function init() {
         device.queue.submit([commandBuffer])
     }
 
-    const rot = document.getElementById('control-p');
-    rot.addEventListener('input', () => {
-        draw(parseFloat(rot.value) / 255.0);
+    const rgbSliders = ['control-p', 'min', 'max', ].map((id) =>
+        document.getElementById(id)
+    )
+
+    rgbSliders.forEach((slider) => {
+        slider.addEventListener('input', () => {
+            draw(
+                parseInt(rgbSliders[0].value) / 255.0,
+                parseFloat(rgbSliders[1].value) / 255.0,
+                parseFloat(rgbSliders[2].value) / 255.0,
+                // parseFloat(rgbSliders[3].value) / 255.0
+            )
+        })
     })
 
+
+//  const rot = document.getElementById('control-p');
+//     rot.addEventListener('input', () => {
+//         draw(parseFloat(rot.value) / 255.0);
+//     })
+
+   
     draw()
     window.redraw = draw
 }

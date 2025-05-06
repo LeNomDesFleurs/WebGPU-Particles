@@ -248,7 +248,7 @@ if (mask==1) {masking = spanLength + 1;} else {masking = spanLength;}
 @compute @workgroup_size(1, 1)
 fn CS_PixelSort(@builtin(global_invocation_id) id: vec3u) {
 
-var gs_PixelSortCache:array<f32, 256>;
+var gs_PixelSortCache:array<f32, 1000>;
 
     let spanLength:u32 = u32(textureLoad(s_SpanLengths, id.xy).r);
 
