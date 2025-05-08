@@ -1,3 +1,7 @@
+export const state = {
+    p : 0.0
+}
+
 export const CANVAS_ID = 'gfx';
 
 export const TYPE_SIZE = {
@@ -8,6 +12,7 @@ export const TYPE_SIZE = {
 	'mat3'  : 36,
 	'mat4' : 64
 }
+
 //get bitmap from url
 export async function loadImageBitmap(url) {
     const res = await fetch(url);
