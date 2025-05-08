@@ -31,3 +31,14 @@ export async function loadWGSL(url) {
 export function getUniformBufferSize(currentSize) {
 	return Math.ceil(currentSize / 16) * 16
 }
+
+export function throttle(callback, interval) {
+	let lastTime = 0;
+	return function (...args) {
+		const now = Date.now();
+		if (now - lastTime >= interval) {
+			lastTime = now;
+			callback.apply(this, args);
+		}
+	};
+}

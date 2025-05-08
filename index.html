@@ -19,9 +19,9 @@
             justify-content: center;
         }
 
-        canvas {
+        /* canvas {
             width: 80%;
-        }
+        } */
 
         #controller {
             position: absolute;
@@ -41,10 +41,12 @@
     <!-- <button>Settings</button> -->
     <div id="controller">
         <label>rotation: <input type="range" id="control-p" min="0" max="255" value="0"></label>  
+        <label>min: <input type="range" id="min" min="0" max="255" value="20"></label>  
+        <label>max: <input type="range" id="max" min="0" max="255" value="180"></label>  
         <label>PNG file: <input type="file" id="upload" accept="image/png" id="load-image"></label>
     </div>
 
-    <script type="module" src="main-re.js"></script>
-    <script type="module" src="controller.js"></script>
+    <script type="module" src="main.js"></script>
+    <!-- <script type="module" src="controller.js"></script> -->
 </body>
 </html>
