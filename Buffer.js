@@ -19,6 +19,10 @@ class UniformBuffer /*extends WGPUBuffer*/ {
     set(k, v) {
         const subarray = this.subarraysMap.get(k);
         if (!subarray) throw new Error(`Uniform ${k} not found.`);
+        if (subarray.length == 1) {
+            subarray[0] = v;
+            return;
+        }
         for (let i = 0; i < v.length; i++) {
             subarray[i] = v[i];
         }
@@ -39,7 +43,8 @@ export class UniformBufferBuilder {
 
     add(info) {
         const size = TYPE_SIZE[info.type];
-        this.uniforms.set(info.name, { offset : this.size / 4, size: size/ 4 }); // todo
+        this.uniforms.set(info.name, { offset : this.size / 4, size: size / 4 }); // todo
+        console.log(this.uniforms.get(info.name));
         this.size += size;
         return this;
     }
@@ -48,7 +53,9 @@ export class UniformBufferBuilder {
         const uniformValues = new Float32Array(this.size / Float32Array.BYTES_PER_ELEMENT); // TODO for now (check other data types)
         const subarraysMap = new Map();
         for (let [k, v] of this.uniforms) {
+            console.log('allo', k, v)
             const subarray = uniformValues.subarray(v.offset, v.offset + v.size);
+            console.log('so', subarray)
             subarraysMap.set(k, subarray);
         }
         return new UniformBuffer(this.device, uniformValues, subarraysMap);

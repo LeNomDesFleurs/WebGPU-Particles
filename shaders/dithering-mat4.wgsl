@@ -1,7 +1,7 @@
 struct Uniforms {
+    transformMatrix: mat4x4f,
     resolution: vec2f,
     colorNb: f32,
-    transformMatrix: mat4x4f,
 };
 
 struct OurVertexShaderOutput {
@@ -35,8 +35,8 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     var vsOutput: OurVertexShaderOutput;
 
     let vertex = vertices[vertexIndex];
-    // vsOutput.position = uniforms.transformMatrix * vec4f(vertex.xy, 0.0, 1.0);
-    vsOutput.position = vec4f(vertices[vertexIndex].xy, 0.0, 1.0);
+    vsOutput.position = uniforms.transformMatrix * vec4f(vertex.xy, 0.0, 1.0);
+    // vsOutput.position = vec4f(vertices[vertexIndex].xy, 0.0, 1.0);
 
     vsOutput.texcoord = vertex.zw;
     return vsOutput;

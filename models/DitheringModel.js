@@ -1,5 +1,6 @@
 import { UniformBufferBuilder } from "../Buffer.js";
 import { RenderModel } from "../RenderModel.js";
+import { mat4 } from "../lib/esm/index.js"
 import { state } from "../utils.js";
 
 let IMAGE_URL = './rose.jpg'
@@ -18,9 +19,10 @@ export class DitheringModel extends RenderModel {
 
     createResources() {
         const bufferBuilder = new UniformBufferBuilder(this.device);
-        this.uniformBuffer = bufferBuilder.add({ name: 'resolution', type: 'vec2' })
-                                        .add({ name: 'col-nb', type: 'f32'})
+        this.uniformBuffer = bufferBuilder
                                         .add({ name: 'transform-matrix', type: 'mat4'})
+                                        .add({ name: 'resolution', type: 'vec2' })
+                                        .add({ name: 'col-nb', type: 'f32'})
                                         .build();
 
 
@@ -76,10 +78,10 @@ export class DitheringModel extends RenderModel {
 
     updateUniforms(...args) {
         const canvasSize = this.renderCtx.getCanvasSize();
+        this.uniformBuffer.set('transform-matrix', DitheringModel.transformCanvas(state.p, canvasSize[0], canvasSize[1]));
         this.uniformBuffer.set('resolution', canvasSize);
         this.uniformBuffer.set('col-nb', state.colNb);
-        this.uniformBuffer.set('transform-matrix', transformCanvas(state.p, canvasSize[0], canvasSize[1]));
-        super.device.queue.writeBuffer(this.uniformBuffer.getBufferObject(), 0, this.uniformBuffer.getBuffer());
+        this.device.queue.writeBuffer(this.uniformBuffer.getBufferObject(), 0, this.uniformBuffer.getBuffer());
     }
 
     encodeRenderPass() {
@@ -93,6 +95,7 @@ export class DitheringModel extends RenderModel {
 
     render() {
         const encoder = this.device.createCommandEncoder({ label: 'dithering' });
+        this.updateUniforms();
 
         const pass = encoder.beginRenderPass({
             colorAttachments: [{
