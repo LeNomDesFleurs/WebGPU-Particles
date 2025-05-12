@@ -1,3 +1,7 @@
+export const state = {
+    p : 0.0
+}
+
 export const CANVAS_ID = 'gfx';
 
 export const TYPE_SIZE = {
@@ -8,6 +12,7 @@ export const TYPE_SIZE = {
 	'mat3'  : 36,
 	'mat4' : 64
 }
+
 //get bitmap from url
 export async function loadImageBitmap(url) {
     const res = await fetch(url);
@@ -25,4 +30,15 @@ export async function loadWGSL(url) {
 
 export function getUniformBufferSize(currentSize) {
 	return Math.ceil(currentSize / 16) * 16
+}
+
+export function throttle(callback, interval) {
+	let lastTime = 0;
+	return function (...args) {
+		const now = Date.now();
+		if (now - lastTime >= interval) {
+			lastTime = now;
+			callback.apply(this, args);
+		}
+	};
 }

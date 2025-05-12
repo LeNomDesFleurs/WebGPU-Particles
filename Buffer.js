@@ -1,15 +1,12 @@
 import { TYPE_SIZE, getUniformBufferSize } from "./utils.js"
-import { rendererInstance } from "./Renderer.js";
 
 // class WGPUBuffer {
 //     // TODO
 // }
 
 class UniformBuffer /*extends WGPUBuffer*/ {
-    constructor(buffer, subarraysMap) {
-        if (!rendererInstance) throw new Error('no renderer instance found');
-
-        this.bufferObject = rendererInstance.getDevice().createBuffer({
+    constructor(device, buffer, subarraysMap) {
+        this.bufferObject = device.createBuffer({
             size: getUniformBufferSize(buffer.byteLength),
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, // TODO add flag selection on builder
         })
@@ -34,9 +31,10 @@ class UniformBuffer /*extends WGPUBuffer*/ {
 }
 
 export class UniformBufferBuilder {
-    constructor() {
+    constructor(device) {
         this.size = 0;
         this.uniforms = new Map();
+        this.device = device;
     }
 
     add(info) {
@@ -53,6 +51,6 @@ export class UniformBufferBuilder {
             const subarray = uniformValues.subarray(v.offset, v.offset + v.size);
             subarraysMap.set(k, subarray);
         }
-        return new UniformBuffer(uniformValues, subarraysMap);
+        return new UniformBuffer(this.device, uniformValues, subarraysMap);
     }
 }
