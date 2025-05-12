@@ -1,5 +1,6 @@
 struct Uniforms {
     resolution: vec2f,
+    colorNb: f32,
     transformMatrix: mat4x4f,
 };
 
@@ -13,18 +14,23 @@ var<uniform> uniforms: Uniforms;
 @group(0) @binding(1) var ourSampler: sampler;
 @group(0) @binding(2) var ourTexture: texture_2d<f32>;
 
+// TODO customize BAYER_SIZE => prepare function or already intialized arrays
+// TODO make rotate uniform change functions
+// TODO dither strength control
+// TODO think -> some other dithering than bayer ? ==> what if i change this every frame ? (randomize)
+
 @vertex
 fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     let vertices = array(
-    // 1st triangle
-    vec4f( -1.0, -1.0, 0.0,  0.0),  // center
-    vec4f(1.0, -1.0, 1.0,  0.0),  // right, center
-    vec4f(-1.0, 1.0, 0.0,  1.0),  // center, top
+        // 1st triangle
+        vec4f( -1.0, -1.0, 0.0,  0.0),  // center
+        vec4f(1.0, -1.0, 1.0,  0.0),  // right, center
+        vec4f(-1.0, 1.0, 0.0,  1.0),  // center, top
 
-    // 2nd triangle
-    vec4f(-1.0, 1.0, 0.0,  1.0),  // center, top
-    vec4f( 1.0, -1.0, 1.0,  0.0),  // right, center
-    vec4f( 1.0, 1.0, 1.0,  1.0),  // right, top
+        // 2nd triangle
+        vec4f(-1.0, 1.0, 0.0,  1.0),  // center, top
+        vec4f( 1.0, -1.0, 1.0,  0.0),  // right, center
+        vec4f( 1.0, 1.0, 1.0,  1.0),  // right, top
     );
     var vsOutput: OurVertexShaderOutput;
 
@@ -35,26 +41,6 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     vsOutput.texcoord = vertex.zw;
     return vsOutput;
 }
-
-// const int Colors = 2;
-
-// var Colors:i32 = 2;
-// Resolution of the base image
-
-// Number of colors in each channel
-//const int COLORS_PER_CHANNEL = Colors;
-
-// Strength of the dithering effect, from 0.0 to 1.0
-// const float DITHER_STRENGTH = 1.0;
-// var DITHER_STRENGHT:f32 = 1.0;
-
-// Size of the dither texture
-// const float BAYER_SIZE = 8.0;
-// var BAYER_SIZE:f32=8.0;
-
-// 8x8 bayer ordered dithering pattern. Each input pixel
-// is scaled to the 0..63 range before looking in this table
-// to determine the action
 
 const BAYER_TEXTURE = array(
     0., 32.,  8., 40.,  2., 34., 10., 42.,
@@ -85,9 +71,8 @@ fn quantize(channel: f32, period: f32) -> f32 {
 @fragment
 fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
     let fragCoord = fsInput.texcoord;
-    let Colors =2;
     let DITHER_STRENGTH = 1.0;
-    let period = vec3(1.0 / (f32(Colors) - 1.0));
+    let period = vec3(1.0 / (f32(uniforms.colorNb) - 1.0));
 
     var output = textureSample(ourTexture, ourSampler, fsInput.texcoord).rgb;
     output += (getBayer(fragCoord) - 0.5) * period * DITHER_STRENGTH;

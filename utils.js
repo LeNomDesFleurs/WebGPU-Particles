@@ -1,5 +1,6 @@
 export const state = {
-    p : 0.0
+    p : 0.0,
+	colNb: 2.0
 }
 
 export const CANVAS_ID = 'gfx';

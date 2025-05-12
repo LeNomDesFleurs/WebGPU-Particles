@@ -1,6 +1,6 @@
-import { UniformBufferBuilder } from "./Buffer.js";
-import { RenderModel } from "./RenderModel.js";
-import { state } from "./utils.js";
+import { UniformBufferBuilder } from "../Buffer.js";
+import { RenderModel } from "../RenderModel.js";
+import { state } from "../utils.js";
 
 let IMAGE_URL = './rose.jpg'
 let DITHERING_SHADER_PATH = "./shaders/dithering-mat4.wgsl"
@@ -19,6 +19,7 @@ export class DitheringModel extends RenderModel {
     createResources() {
         const bufferBuilder = new UniformBufferBuilder(this.device);
         this.uniformBuffer = bufferBuilder.add({ name: 'resolution', type: 'vec2' })
+                                        .add({ name: 'col-nb', type: 'f32'})
                                         .add({ name: 'transform-matrix', type: 'mat4'})
                                         .build();
 
@@ -75,8 +76,9 @@ export class DitheringModel extends RenderModel {
 
     updateUniforms(...args) {
         const canvasSize = this.renderCtx.getCanvasSize();
-        uniformBuffer.set('resolution', canvasSize);
-        uniformBuffer.set('transform-matrix', transformCanvas(state.p, canvasSize[0], canvasSize[1]));
+        this.uniformBuffer.set('resolution', canvasSize);
+        this.uniformBuffer.set('col-nb', state.colNb);
+        this.uniformBuffer.set('transform-matrix', transformCanvas(state.p, canvasSize[0], canvasSize[1]));
         super.device.queue.writeBuffer(this.uniformBuffer.getBufferObject(), 0, this.uniformBuffer.getBuffer());
     }
 
