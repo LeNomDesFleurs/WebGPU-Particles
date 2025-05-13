@@ -14,6 +14,7 @@ export class RenderModel {
     updateUniforms(...args) { throw new Error("updateUniforms() must be implemented by subclass"); }
     encodeRenderPass() { throw new Error("encodeRenderPass() must be implemented by subclass"); }
     render() { throw new Error("render() must be implemented by subclass"); }
+    addControllers() { throw new Error("addControllers() must be implemented by subclass"); }
 
     async addShaderModule(name, path) {
         try {

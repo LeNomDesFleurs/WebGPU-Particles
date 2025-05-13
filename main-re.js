@@ -10,17 +10,6 @@ async function init() {
     await modelDithering.init();
     modelDithering.render();
 
-	const rot = document.getElementById('control-p');
-	rot.addEventListener('input', () => {
-        state.p = parseFloat(rot.value) / 255.0;
-        modelDithering.render();
-	});
-
-    const colNb = document.getElementById('col-nb');
-	colNb.addEventListener('input', () => {
-        state.colNb = parseFloat(colNb.value);
-        modelDithering.render();
-	});
 
     // const renderContext = await getRendererContextInstance();
     // const pixelSortingModel = new PixelSortingModel(renderContext.getDevice(), renderContext);

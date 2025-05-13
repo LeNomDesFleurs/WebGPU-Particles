@@ -23,6 +23,7 @@ export class DitheringModel extends RenderModel {
                                         .add({ name: 'transform-matrix', type: 'mat4'})
                                         .add({ name: 'resolution', type: 'vec2' })
                                         .add({ name: 'col-nb', type: 'f32'})
+                                        .add({ name: 'dith-str', type: 'f32' })
                                         .build();
 
 
@@ -81,7 +82,28 @@ export class DitheringModel extends RenderModel {
         this.uniformBuffer.set('transform-matrix', DitheringModel.transformCanvas(state.p, canvasSize[0], canvasSize[1]));
         this.uniformBuffer.set('resolution', canvasSize);
         this.uniformBuffer.set('col-nb', state.colNb);
+        this.uniformBuffer.set('dith-str', state.ditherStrength);
         this.device.queue.writeBuffer(this.uniformBuffer.getBufferObject(), 0, this.uniformBuffer.getBuffer());
+    }
+
+    addControllers() {
+        const rot = document.getElementById('control-p');
+        rot.addEventListener('input', () => {
+            state.p = parseFloat(rot.value) / 255.0;
+            this.render();
+        });
+    
+        const colNb = document.getElementById('col-nb');
+        colNb.addEventListener('input', () => {
+            state.colNb = parseFloat(colNb.value);
+            this.render();
+        });
+    
+        const dithStr = document.getElementById('dith-str');
+        dithStr.addEventListener('input', () => {
+            state.ditherStrength = parseFloat(dithStr.value) / 255.0;
+            this.render();
+        })
     }
 
     encodeRenderPass() {
@@ -91,6 +113,7 @@ export class DitheringModel extends RenderModel {
     async init() {
         await this.loadAsset();
         this.createResources();
+        this.addControllers();
     }
 
     render() {
