@@ -44,7 +44,6 @@ export class UniformBufferBuilder {
     add(info) {
         const size = TYPE_SIZE[info.type];
         this.uniforms.set(info.name, { offset : this.size / 4, size: size / 4 }); // todo
-        console.log(this.uniforms.get(info.name));
         this.size += size;
         return this;
     }
@@ -53,9 +52,7 @@ export class UniformBufferBuilder {
         const uniformValues = new Float32Array(this.size / Float32Array.BYTES_PER_ELEMENT); // TODO for now (check other data types)
         const subarraysMap = new Map();
         for (let [k, v] of this.uniforms) {
-            console.log('allo', k, v)
             const subarray = uniformValues.subarray(v.offset, v.offset + v.size);
-            console.log('so', subarray)
             subarraysMap.set(k, subarray);
         }
         return new UniformBuffer(this.device, uniformValues, subarraysMap);
