@@ -11,7 +11,9 @@ struct OurVertexShaderOutput {
 @group(0) @binding(0)
 var<uniform> uniforms: Uniforms;
 @group(0) @binding(1) var ourSampler: sampler;
-@group(0) @binding(2) var ourTexture: texture_2d<f32>;
+@group(0) @binding(2) var inputTexture: texture_2d<f32>;
+@group(0) @binding(3) var outputTexture: texture_storage_2d<r32float, write>;
+
 
 const vertices = array(
     // 1st triangle
@@ -38,28 +40,6 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     return vsOutput;
 }
 
-// const int Colors = 2;
-
-// var Colors:i32 = 2;
-// Resolution of the base image
-
-// Number of colors in each channel
-//const int COLORS_PER_CHANNEL = Colors;
-
-// Strength of the dithering effect, from 0.0 to 1.0
-// const float DITHER_STRENGTH = 1.0;
-// var DITHER_STRENGHT:f32 = 1.0;
-
-// Size of the dither texture
-// const float BAYER_SIZE = 8.0;
-// var BAYER_SIZE:f32=8.0;
-
-// 8x8 bayer ordered dithering pattern. Each input pixel
-// is scaled to the 0..63 range before looking in this table
-// to determine the action
-
-
-/// Nice ref: https://unix4lyfe.org/dct/
 
 
 const PI:f32= 3.1415972;
@@ -81,17 +61,15 @@ fn DCTcoeff(k:vec2f, x:vec2f)->f32
 }
 
 @fragment
-fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
+fn fs(fsInput: OurVertexShaderOutput, @builtin(position) position: vec4f) -> @location(0) vec4f {
 
-
-    	fragColor = texture(iChannel3, fsInput.texcoord/iResolution.xy);
-    
 /// This is the reconstruction step, where each 8x8 bloc is converted back to the spatial domain
 
-    var k:vec2f = (fragCoord% 8.)-.5;
-    var K:vec2f = fragCoord-k-.5;
+    var k:vec2f = (position.xy% 8.)-.5;
+    var K:vec2f = position.xy-k-.5;
         
-    vec3 val = vec3(0.);
+    var val: vec3f = vec3(0.);
+
     for(int u=0; u<NB_FREQ; ++u)
     	for(int v=0; v<NB_FREQ; ++v)
         {
@@ -100,20 +78,13 @@ fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
             if (u ==0){ux = SQRT2;}
             if (v ==0){vy = SQRT2;}
 
-            const coef:f32 = DCTcoeff(vec2(u,v), (k+.5)/8.) * ux * vy;
-            const idx:i32 = (K+vec2(u,v)+0.5)/iResolution.xy;
-            const texture:vec2f=texture(iChannel0, idx).rgb
+            var coef:f32 = DCTcoeff(vec2(u,v), (k+.5)/8.) * ux * vy;
+            var idx:i32 = (K+vec2(u,v)+0.5)/uniforms.resolution;
+            var texture:vec2f=texture(iChannel0, idx).rgb
             val += texture * coef ;
         }
     
-    fragColor=vec4(val/4.,1.);
-
-    // output += (getBayer(fragCoord) - 0.5) * period * DITHER_STRENGTH;
-    // output = vec3f(quantize(output.r, period.r),
-    // quantize(output.g, period.g),
-    // quantize(output.b, period.b));
-
-    return vec4f(output, 1.0);
+    return vec4f(var, 1.0);
 }
 
 

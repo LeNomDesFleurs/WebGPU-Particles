@@ -39,30 +39,6 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     return vsOutput;
 }
 
-// const int Colors = 2;
-
-// var Colors:i32 = 2;
-// Resolution of the base image
-
-// Number of colors in each channel
-//const int COLORS_PER_CHANNEL = Colors;
-
-// Strength of the dithering effect, from 0.0 to 1.0
-// const float DITHER_STRENGTH = 1.0;
-// var DITHER_STRENGHT:f32 = 1.0;
-
-// Size of the dither texture
-// const float BAYER_SIZE = 8.0;
-// var BAYER_SIZE:f32=8.0;
-
-// 8x8 bayer ordered dithering pattern. Each input pixel
-// is scaled to the 0..63 range before looking in this table
-// to determine the action
-
-
-/// Nice ref: https://unix4lyfe.org/dct/
-
-
 const PI:f32= 3.1415972;
 const SQRT2:f32= 0.70710678118;
 
