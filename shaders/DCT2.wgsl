@@ -11,7 +11,8 @@ struct OurVertexShaderOutput {
 @group(0) @binding(0)
 var<uniform> uniforms: Uniforms;
 @group(0) @binding(1) var ourSampler: sampler;
-@group(0) @binding(2) var ourTexture: texture_2d<f32>;
+@group(0) @binding(2) var inputTexture: texture_2d<f32>;
+@group(0) @binding(3) var outputTexture: texture_storage_2d<r32float, write>;
 
 const vertices = array(
     // 1st triangle
@@ -30,7 +31,7 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     var vsOutput: OurVertexShaderOutput;
 
     let vertex = vertices[vertexIndex];
-    let rotate_position = uniforms.matrix * vec3f(vertex.xy, 1);
+    let rotate_position = uniforms.transformMatrix * vec3f(vertex.xy, 1);
     vsOutput.position = vec4f(rotate_position, 1.0);
     // vsOutput.position = vec4f(vertex.xy, 1.0, 1.0);
 
@@ -82,40 +83,17 @@ fn DCTcoeff(k:vec2f, x:vec2f)->f32
 
 @fragment
 fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
-
-
-    	fragColor = texture(iChannel3, fsInput.texcoord/iResolution.xy);
     
-        
-
-
-    let fragCoord = fsInput.texcoord;
-    let Colors =2;
-    let DITHER_STRENGTH = 1.0;
-    let period = vec3(1.0 / (f32(Colors) - 1.0));
-
-    var output = textureSample(ourTexture, ourSampler, fsInput.texcoord).rgb;
-
-
-
-
-/// This is the Quantification step, where frequency values are discretized.
-/// This is where the lossy compression happens: this step is non invertible
-
-
-/// You may change the number of level to achieve different effects
-
-    fragColor = texture(iChannel0, fragCoord/iResolution.xy);
-    
+        	let fragColor:vec3f = textureSample(inputTexture, ourSampler, fsInput.texcoord).rgb;
     
     // if(texelFetch(iChannel2, ivec2(65, 0), 0).x<0.5)
         // this assumes data between 0 and 1.
         fragColor = round(fragColor/8.*NB_LEVELS)/NB_LEVELS*8.;
 
 
+    textureStore(otuputTexture, fsInput.texcoord, fragColor);
 
-
-    return vec4f(output, 1.0);
+    // return vec4f(output, 1.0);
 }
 
 

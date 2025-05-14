@@ -12,7 +12,7 @@ struct OurVertexShaderOutput {
 var<uniform> uniforms: Uniforms;
 @group(0) @binding(1) var ourSampler: sampler;
 @group(0) @binding(2) var inputTexture: texture_2d<f32>;
-@group(0) @binding(3) var outputTexture: texture_storage_2d<r32float, write>;;
+@group(0) @binding(3) var outputTexture: texture_storage_2d<r32float, write>;
 
 const vertices = array(
     // 1st triangle
@@ -62,10 +62,7 @@ fn DCTcoeff(k:vec2f, x:vec2f)->f32
 @fragment
 fn fs(fsInput: OurVertexShaderOutput, @builtin(position) position: vec4f) -> @location(0) vec4f {
 
-
-    	let fragColor:vec3f = textureSample(inputTexture, ourSampler, fsInput.texcoord).rgb;
     
-
 /// This is the discrete cosine transform step, where 8x8 blocs are converted into frequency space
 
    var k:vec2f = (position.xy % 8.)-.5;
