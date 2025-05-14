@@ -1,6 +1,5 @@
 struct Uniforms {
     resolution: vec2f,
-    transformMatrix: mat3x3f,
 };
 
 struct OurVertexShaderOutput {
@@ -39,8 +38,6 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     return vsOutput;
 }
 
-
-
 const PI:f32= 3.1415972;
 const SQRT2:f32= 0.70710678118;
 
@@ -62,7 +59,6 @@ fn DCTcoeff(k:vec2f, x:vec2f)->f32
 @fragment
 fn fs(fsInput: OurVertexShaderOutput, @builtin(position) position: vec4f) -> @location(0) vec4f {
 
-    
 /// This is the discrete cosine transform step, where 8x8 blocs are converted into frequency space
 
    var k:vec2f = (position.xy % 8.)-.5;

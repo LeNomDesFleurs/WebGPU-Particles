@@ -12,7 +12,7 @@ export class RenderModel {
     async loadAsset() { throw new Error("loadAssets() must be implemented by subclass"); }
     createResources() { throw new Error("createResources() must be implemented by subclass"); }
     updateUniforms(...args) { throw new Error("updateUniforms() must be implemented by subclass"); }
-    encodeRenderPass() { throw new Error("encodeRenderPass() must be implemented by subclass"); }
+    // encodeRenderPass() { throw new Error("encodeRenderPass() must be implemented by subclass"); }
     render() { throw new Error("render() must be implemented by subclass"); }
     addControllers() { throw new Error("addControllers() must be implemented by subclass"); }
 
