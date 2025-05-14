@@ -15,7 +15,7 @@ struct OurVertexShaderOutput {
 var<uniform> uniforms: Uniforms;
 @group(0) @binding(1) var ourSampler: sampler;
 @group(0) @binding(2) var inputTexture: texture_2d<f32>;
-@group(0) @binding(3) var outputTexture: texture_storage_2d<r32float, write>;
+@group(0) @binding(3) var outputTexture: texture_storage_2d<rgba8unorm, write>;
 
 const vertices = array(
     // 1st triangle

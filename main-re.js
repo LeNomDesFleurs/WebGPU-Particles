@@ -10,9 +10,10 @@ async function init() {
     const modelDCT = new DCTModel(renderContext.getDevice(), renderContext);
     
     await modelDCT.init();
+    modelDCT.render();
 
-    await modelDithering.init();
-    modelDithering.render();
+    // await modelDithering.init();
+    // modelDithering.render();
 
     // const renderContext = await getRendererContextInstance();
     // const pixelSortingModel = new PixelSortingModel(renderContext.getDevice(), renderContext);
