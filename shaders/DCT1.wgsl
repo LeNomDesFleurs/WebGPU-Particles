@@ -35,9 +35,9 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     var vsOutput: OurVertexShaderOutput;
 
     let vertex = vertices[vertexIndex];
-    let rotate_position = uniforms.transformMatrix * vec3f(vertex.xy, 1);
-    vsOutput.position = vec4f(rotate_position, 1.0);
-    // vsOutput.position = vec4f(vertex.xy, 1.0, 1.0);
+    // let rotate_position = uniforms.transformMatrix * vec3f(vertex.xy, 1);
+    // vsOutput.position = vec4f(rotate_position, 1.0);
+    vsOutput.position = vec4f(vertex.xy, 1.0, 1.0);
 
     vsOutput.texcoord = vertex.zw;
     return vsOutput;
@@ -62,12 +62,12 @@ fn DCTcoeff(k:vec2f, x:vec2f)->f32
 }
 
 @fragment
-fn fs(fsInput: OurVertexShaderOutput, @builtin(position) position: vec4f) -> @location(0) vec4f {
+fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
 
 /// This is the discrete cosine transform step, where 8x8 blocs are converted into frequency space
 
-   var k:vec2f = (position.xy % 8.)-.5;
-    var K:vec2f = (position.xy) - .5 - k;
+   var k:vec2f = (fsInput.position.xy % 8.)-.5;
+    var K:vec2f = (fsInput.position.xy) - .5 - k;
     
     var val:vec3f = vec3(0.);
     
@@ -79,7 +79,7 @@ fn fs(fsInput: OurVertexShaderOutput, @builtin(position) position: vec4f) -> @lo
             var ky:f32 = 1.0;
             if (k.x < 0.5){kx = SQRT2;}
             if (k.y < 0.5){ky = SQRT2;}
-            var idx:vec2f = (K+vec2(x,y)+.5)/uniforms.resolution;
+            var idx:vec2f = (K+vec2f(f32(x),f32(y))+.5)/uniforms.resolution.xy;
             var texture:vec3f= textureSample(inputTexture, ourSampler, idx).rgb;
             var temp: vec2f = (vec2f(f32(x),f32(y))+0.5) / 8.;
             var coef = DCTcoeff(k, temp) * kx * ky;
@@ -87,8 +87,8 @@ fn fs(fsInput: OurVertexShaderOutput, @builtin(position) position: vec4f) -> @lo
         }
     }
 
-    textureStore(outputTexture/4.0, fsInput.texcoord, val);
-    // return vec4f(output, 1.0);
+    textureStore(outputTexture, vec2u(fsInput.position.xy), vec4f(val/4.0, 1.0));
+    return vec4f(val, 1.0);
 }
 
 

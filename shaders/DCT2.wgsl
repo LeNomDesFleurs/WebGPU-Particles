@@ -31,9 +31,9 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     var vsOutput: OurVertexShaderOutput;
 
     let vertex = vertices[vertexIndex];
-    let rotate_position = uniforms.transformMatrix * vec3f(vertex.xy, 1);
-    vsOutput.position = vec4f(rotate_position, 1.0);
-    // vsOutput.position = vec4f(vertex.xy, 1.0, 1.0);
+    // let rotate_position = uniforms.transformMatrix * vec3f(vertex.xy, 1);
+    // vsOutput.position = vec4f(rotate_position, 1.0);
+    vsOutput.position = vec4f(vertex.xy, 1.0, 1.0);
 
     vsOutput.texcoord = vertex.zw;
     return vsOutput;
@@ -60,16 +60,16 @@ fn DCTcoeff(k:vec2f, x:vec2f)->f32
 @fragment
 fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
     
-        	let fragColor:vec3f = textureSample(inputTexture, ourSampler, fsInput.texcoord).rgb;
+        	var fragColor:vec3f = textureSample(inputTexture, ourSampler, fsInput.texcoord).rgb;
     
     // if(texelFetch(iChannel2, ivec2(65, 0), 0).x<0.5)
         // this assumes data between 0 and 1.
         fragColor = round(fragColor/8.*NB_LEVELS)/NB_LEVELS*8.;
 
 
-    textureStore(otuputTexture, fsInput.texcoord, fragColor);
+    textureStore(outputTexture, vec2u(fsInput.position.xy), vec4f(fragColor, 1.0));
 
-    // return vec4f(output, 1.0);
+    return vec4f(fragColor, 1.0);
 }
 
 

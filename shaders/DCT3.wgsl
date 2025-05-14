@@ -32,9 +32,9 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     var vsOutput: OurVertexShaderOutput;
 
     let vertex = vertices[vertexIndex];
-    let rotate_position = uniforms.matrix * vec3f(vertex.xy, 1);
-    vsOutput.position = vec4f(rotate_position, 1.0);
-    // vsOutput.position = vec4f(vertex.xy, 1.0, 1.0);
+    // let rotate_position = uniforms.matrix * vec3f(vertex.xy, 1);
+    // vsOutput.position = vec4f(rotate_position, 1.0);
+    vsOutput.position = vec4f(vertex.xy, 1.0, 1.0);
 
     vsOutput.texcoord = vertex.zw;
     return vsOutput;
@@ -61,30 +61,31 @@ fn DCTcoeff(k:vec2f, x:vec2f)->f32
 }
 
 @fragment
-fn fs(fsInput: OurVertexShaderOutput, @builtin(position) position: vec4f) -> @location(0) vec4f {
+fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
 
 /// This is the reconstruction step, where each 8x8 bloc is converted back to the spatial domain
 
-    var k:vec2f = (position.xy% 8.)-.5;
-    var K:vec2f = position.xy-k-.5;
-        
-    var val: vec3f = vec3(0.);
+    var k:vec2f = (fsInput.position.xy % 8.) - 0.5;
+    var K:vec2f = (fsInput.position.xy - k) - 0.5;
 
-    for(int u=0; u<NB_FREQ; ++u)
-    	for(int v=0; v<NB_FREQ; ++v)
+    var value: vec3f = vec3f(0.f) ;
+
+    for(var u:i32=0; u<NB_FREQ; u++){
+    	for(var v:i32=0; v<NB_FREQ; v++)
         {
              var ux:f32 = 1.0;
             var vy:f32 = 1.0;
             if (u ==0){ux = SQRT2;}
             if (v ==0){vy = SQRT2;}
-
-            var coef:f32 = DCTcoeff(vec2(u,v), (k+.5)/8.) * ux * vy;
-            var idx:i32 = (K+vec2(u,v)+0.5)/uniforms.resolution;
-            var texture:vec2f=texture(iChannel0, idx).rgb
-            val += texture * coef ;
+            var temp: f32= DCTcoeff( vec2f(f32(u),f32(v)), (k+.5) / 8. );
+            var coef:f32 =  temp * ux * vy;
+            var idx:vec2f = (K+vec2(f32(u),f32(v))+0.5)/ uniforms.resolution.xy;
+            var texture:vec3f=textureSample(inputTexture, ourSampler, idx).rgb;
+            value += texture * coef ;
         }
-    
-    return vec4f(var, 1.0);
+    }
+
+    return vec4f(value, 1.0);
 }
 
 
