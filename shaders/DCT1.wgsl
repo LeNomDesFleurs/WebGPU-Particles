@@ -1,3 +1,7 @@
+/// 
+/// Discrete cosine transform step, where 8x8 blocs are converted into frequency space
+///
+
 struct Uniforms {
     resolution: vec2f,
     transformMatrix: mat3x3f,
@@ -26,6 +30,7 @@ const vertices = array(
     vec4f( 1.0, 1.0, 1.0,  1.0),  // right, top
 );
 
+//Dummy vertex quad to get position for the sampling
 @vertex
 fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     var vsOutput: OurVertexShaderOutput;
@@ -63,13 +68,14 @@ fn DCTcoeff(k:vec2f, x:vec2f)->f32
 fn fs(fsInput: OurVertexShaderOutput, @builtin(position) position: vec4f) -> @location(0) vec4f {
 
     
-/// This is the discrete cosine transform step, where 8x8 blocs are converted into frequency space
 
    var k:vec2f = (position.xy % 8.)-.5;
     var K:vec2f = (position.xy) - .5 - k;
     
     var val:vec3f = vec3(0.);
     
+//This is where the DCT is performed
+
     for(var x:i32=0; x<8; x++){
     	for(var y:i32 =0; y<8; y++){
             var kx:f32 = 1.0;
