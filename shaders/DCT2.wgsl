@@ -13,9 +13,7 @@ var<uniform> uniforms: Uniforms;
 @group(0) @binding(1) var ourSampler: sampler;
 @group(0) @binding(2) var ourTexture: texture_2d<f32>;
 
-@vertex
-fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
-    let vertices = array(
+const vertices = array(
     // 1st triangle
     vec4f( -1.0, -1.0, 0.0,  0.0),  // center
     vec4f(1.0, -1.0, 1.0,  0.0),  // right, center
@@ -25,7 +23,10 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     vec4f(-1.0, 1.0, 0.0,  1.0),  // center, top
     vec4f( 1.0, -1.0, 1.0,  0.0),  // right, center
     vec4f( 1.0, 1.0, 1.0,  1.0),  // right, top
-    );
+);
+
+@vertex
+fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     var vsOutput: OurVertexShaderOutput;
 
     let vertex = vertices[vertexIndex];
@@ -96,26 +97,6 @@ fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
     var output = textureSample(ourTexture, ourSampler, fsInput.texcoord).rgb;
 
 
-/// This is the discrete cosine transform step, where 8x8 blocs are converted into frequency space
-
-   var k:vec2f = mod(fragCoord, 8.)-.5;
-var K:vec2f = fragCoord - .5 - k;
-    
-    var val:vec3f = vec3(0.);
-    
-    for(var x:i32=0; x<8; x++){
-    	for(var y:i32 =0; y<8; y++){
-            var kx:f32 = 1.0;
-            var ky:f32 = 1.0;
-            if (k.x < 0.5){kx = SQRT2;}
-            if (k.y < 0.5){ky = SQRT2;}
-            const idx:vec2f = (K+vec2(x,y)+.5)/iResolution.xy;
-            const texture:vec3f= textureSample(iChannel0, idx).rgb;
-            const coef = DCTcoeff(k, (vec2(x,y)+0.5)/8.) * kx * ky;
-            val += texture * coef ;
-        }
-    }
-    fragColor=vec4(val/4.,0.);
 
 
 /// This is the Quantification step, where frequency values are discretized.
@@ -131,32 +112,8 @@ var K:vec2f = fragCoord - .5 - k;
         // this assumes data between 0 and 1.
         fragColor = round(fragColor/8.*NB_LEVELS)/NB_LEVELS*8.;
 
-/// This is the reconstruction step, where each 8x8 bloc is converted back to the spatial domain
 
-    var k:vec2f = (fragCoord% 8.)-.5;
-    var K:vec2f = fragCoord-k-.5;
-        
-    vec3 val = vec3(0.);
-    for(int u=0; u<NB_FREQ; ++u)
-    	for(int v=0; v<NB_FREQ; ++v)
-        {
-             var ux:f32 = 1.0;
-            var vy:f32 = 1.0;
-            if (u ==0){ux = SQRT2;}
-            if (v ==0){vy = SQRT2;}
 
-            const coef:f32 = DCTcoeff(vec2(u,v), (k+.5)/8.) * ux * vy;
-            const idx:i32 = (K+vec2(u,v)+0.5)/iResolution.xy;
-            const texture:vec2f=texture(iChannel0, idx).rgb
-            val += texture * coef ;
-        }
-    
-    fragColor=vec4(val/4.,1.);
-
-    // output += (getBayer(fragCoord) - 0.5) * period * DITHER_STRENGTH;
-    // output = vec3f(quantize(output.r, period.r),
-    // quantize(output.g, period.g),
-    // quantize(output.b, period.b));
 
     return vec4f(output, 1.0);
 }
