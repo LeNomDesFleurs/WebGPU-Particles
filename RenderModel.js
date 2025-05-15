@@ -14,7 +14,58 @@ export class RenderModel {
     updateUniforms(...args) { throw new Error("updateUniforms() must be implemented by subclass"); }
     // encodeRenderPass() { throw new Error("encodeRenderPass() must be implemented by subclass"); }
     render() { throw new Error("render() must be implemented by subclass"); }
-    addControllers() { throw new Error("addControllers() must be implemented by subclass"); }
+    addControls() { throw new Error("addControls() must be implemented by subclass"); }
+    
+    addControllers(controls = []) {
+        const controller = document.getElementById('controller');
+        
+        controls.forEach(ctrl => {
+            const label = document.createElement('label');
+            label.textContent = `${ctrl.label}: `;
+
+            if (ctrl.type == 'range') {
+
+                const input = document.createElement('input');
+                input.type = 'range';
+                input.id = ctrl.id;
+                input.min = ctrl.min;
+                input.max = ctrl.max;
+                input.step = ctrl.step;
+                input.value = ctrl.value;
+                input.addEventListener('input', () => {
+                    ctrl.handler(parseFloat(input.value));
+                    this.render();
+                });
+                label.appendChild(input);
+            } else if (ctrl.type == 'radio') {
+                const container = document.createElement('div');
+
+                ctrl.options.forEach(size => {
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = ctrl.name;
+                    radio.value = size;
+                    if (size === ctrl.default) radio.checked = true;
+
+                    radio.addEventListener('change', () => {
+                        ctrl.handler(parseFloat(radio.value));
+                        this.render();
+                    })
+                    const radioLabel = document.createElement('label');
+                    radioLabel.textContent = `${size}×${size}`;
+                    radioLabel.appendChild(radio);
+    
+                    container.appendChild(radioLabel);
+                })
+
+                label.appendChild(container);
+                controller.appendChild(label);
+            }
+    
+            controller.appendChild(label);
+        });    
+    }
+
 
     async addShaderModule(name, path) {
         try {

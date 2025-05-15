@@ -85,66 +85,20 @@ export class DitheringModel extends RenderModel {
         this.device.queue.writeBuffer(this.uniformBuffer.getBufferObject(), 0, this.uniformBuffer.getBuffer());
     }
 
-    addControllers() {
-        const controller = document.getElementById('controller');
-        
+    addControls() {
         const controls = [
             { type: 'range', id: 'col-nb', label: 'color nb', min: 2, max: 20, value: 2, step: 1, handler: v => state.colNb = v },
             { type: 'range', id: 'dith-str', label: 'dither strength', min: 0, max: 255, value: 255, step: 1, handler: v => state.ditherStrength = v / 255.0 },
             { type: 'radio', name: 'bayer-size', label: 'bayer size', options: [2, 4, 8], default: 8, handler: v => state.bayerFilterSize = v }
         ];
 
-        controls.forEach(ctrl => {
-            const label = document.createElement('label');
-            label.textContent = `${ctrl.label}: `;
-
-            if (ctrl.type == 'range') {
-
-                const input = document.createElement('input');
-                input.type = 'range';
-                input.id = ctrl.id;
-                input.min = ctrl.min;
-                input.max = ctrl.max;
-                input.step = ctrl.step;
-                input.value = ctrl.value;
-                input.addEventListener('input', () => {
-                    ctrl.handler(parseFloat(input.value));
-                    this.render();
-                });
-                label.appendChild(input);
-            } else if (ctrl.type == 'radio') {
-                const container = document.createElement('div');
-
-                ctrl.options.forEach(size => {
-                    const radio = document.createElement('input');
-                    radio.type = 'radio';
-                    radio.name = ctrl.name;
-                    radio.value = size;
-                    if (size === ctrl.default) radio.checked = true;
-
-                    radio.addEventListener('change', () => {
-                        ctrl.handler(parseFloat(radio.value));
-                        this.render();
-                    })
-                    const radioLabel = document.createElement('label');
-                    radioLabel.textContent = `${size}×${size}`;
-                    radioLabel.appendChild(radio);
-    
-                    container.appendChild(radioLabel);
-                })
-
-                label.appendChild(container);
-                controller.appendChild(label);
-            }
-    
-            controller.appendChild(label);
-        });    
+        this.addControllers(controls);
     }
 
     async init() {
         await this.loadAsset();
         this.createResources();
-        this.addControllers();
+        this.addControls();
     }
 
     render() {
