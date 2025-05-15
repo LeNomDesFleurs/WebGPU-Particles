@@ -1,8 +1,8 @@
 struct Uniforms {
-    transformMatrix: mat4x4f,
     resolution: vec2f,
     colorNb: f32,
-    dith_strength: f32
+    dith_strength: f32,
+    bayer_filter_size: f32
 };
 
 struct OurVertexShaderOutput {
@@ -34,12 +34,24 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     var vsOutput: OurVertexShaderOutput;
 
     let vertex = vertices[vertexIndex];
-    vsOutput.position = uniforms.transformMatrix * vec4f(vertex.xy, 0.0, 1.0);
+    vsOutput.position = vec4f(vertex.xy, 0.0, 1.0);
     vsOutput.texcoord = vertex.zw;
     return vsOutput;
 }
 
-const BAYER_TEXTURE = array(
+const BAYER_FILTER_2 = array(
+    0., 2.,
+    3., 1.
+);
+
+const BAYER_FILTER_4 = array(
+    0., 8., 2., 10.,
+    12., 4., 14., 6.,
+    3., 11., 1., 9.,
+    15., 7., 13., 5.
+);
+
+const BAYER_FILTER_8 = array(
     0., 32.,  8., 40.,  2., 34., 10., 42.,
     48., 16., 56., 24., 50., 18., 58., 26.,
     12., 44.,  4., 36., 14., 46.,  6., 38.,
@@ -54,10 +66,17 @@ const BAYER_TEXTURE = array(
 fn getBayer(uvScreenSpace: vec2f) ->f32 {
     let BAYER_SIZE = 8.0;
 
-    var uv = uvScreenSpace * uniforms.resolution % BAYER_SIZE;
+    var uv = uvScreenSpace * uniforms.resolution % uniforms.bayer_filter_size;
 
     // let uv = modf(uvScreenSpace.xy, vec2f(BAYER_SIZE));
-    return BAYER_TEXTURE[i32(uv.y * BAYER_SIZE + uv.x)] / (BAYER_SIZE * BAYER_SIZE);
+    let index = i32(uv.y * uniforms.bayer_filter_size + uv.x);
+    if (uniforms.bayer_filter_size == 2.) {
+        return BAYER_FILTER_2[index] / 4.;
+    } else if (uniforms.bayer_filter_size == 4.) {
+        return BAYER_FILTER_4[index] / 16.;
+    } else {
+        return BAYER_FILTER_8[index] / 64.;
+    }
 }
 
 // Crushing the colors
