@@ -87,23 +87,34 @@ export class DitheringModel extends RenderModel {
     }
 
     addControllers() {
-        const rot = document.getElementById('control-p');
-        rot.addEventListener('input', () => {
-            state.p = parseFloat(rot.value) / 255.0;
-            this.render();
-        });
+        const controller = document.getElementById('controller');
+        
+        const controls = [
+            { id: 'control-p', label: 'rotation', min: 0, max: 255, value: 0, step: 1, handler: v => state.p = v / 255.0 },
+            { id: 'col-nb', label: 'color nb', min: 2, max: 20, value: 2, step: 1, handler: v => state.colNb = v },
+            { id: 'dith-str', label: 'dither strength', min: 0, max: 255, value: 255, step: 1, handler: v => state.ditherStrength = v / 255.0 },
+        ];
+
+        controls.forEach(ctrl => {
+            const label = document.createElement('label');
+            label.textContent = `${ctrl.label}: `;
     
-        const colNb = document.getElementById('col-nb');
-        colNb.addEventListener('input', () => {
-            state.colNb = parseFloat(colNb.value);
-            this.render();
-        });
+            const input = document.createElement('input');
+            input.type = 'range';
+            input.id = ctrl.id;
+            input.min = ctrl.min;
+            input.max = ctrl.max;
+            input.step = ctrl.step;
+            input.value = ctrl.value;
     
-        const dithStr = document.getElementById('dith-str');
-        dithStr.addEventListener('input', () => {
-            state.ditherStrength = parseFloat(dithStr.value) / 255.0;
-            this.render();
-        })
+            input.addEventListener('input', () => {
+                ctrl.handler(parseFloat(input.value));
+                this.render();
+            });
+    
+            label.appendChild(input);
+            controller.appendChild(label);
+        });    
     }
 
     encodeRenderPass() {
