@@ -12,8 +12,8 @@ async function init() {
     // await modelDCT.init();
     // modelDCT.render();
 
-    await modelDithering.init();
-    modelDithering.render();
+    await modelDCT.init();
+    modelDCT.render();
 
     // const renderContext = await getRendererContextInstance();
     // const pixelSortingModel = new PixelSortingModel(renderContext.getDevice(), renderContext);

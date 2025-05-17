@@ -45,14 +45,8 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
 const PI:f32= 3.1415972;
 const SQRT2:f32= 0.70710678118;
 
-const NB_LEVELS:f32= 10.;
-//#define NB_LEVELS (1.+5.*fragCoord.x/iResolution.x)
-//#define NB_LEVELS (1.+7.*iMouse.x/iResolution.x)
-//#define NB_LEVELS floor(1.+7.*iMouse.x/iResolution.x)
-//#define NB_LEVELS (1.+5.*(.5+.5*sin(iTime)))
-
 // You may change the number of frequencies used for the reconstruction for achieving different effects.
-const NB_FREQ:i32= 8;
+const NB_FREQ:f32= 8.f;
 //#define NB_FREQ		int(mod(iTime, 7.)+1.)
 
 fn DCTcoeff(k:vec2f, x:vec2f)->f32
@@ -65,27 +59,32 @@ fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
 
 /// This is the reconstruction step, where each 8x8 bloc is converted back to the spatial domain
 
-    var k:vec2f = (fsInput.position.xy % 8.) - 0.5;
-    var K:vec2f = (fsInput.position.xy - k) - 0.5;
+    var k:vec2f = (fsInput.position.xy % vec2f(8.0))-0.5 ;
+    var K:vec2f = ((fsInput.position.xy) - k)-0.5 ;
+
+    var debug=k;
 
     var value: vec3f = vec3f(0.f) ;
 
-    for(var u:i32=0; u<NB_FREQ; u++){
-    	for(var v:i32=0; v<NB_FREQ; v++)
+    for(var u:f32=0; u<NB_FREQ; u+=1.f){
+    	for(var v:f32=0; v<NB_FREQ; v+=1.f)
         {
-             var ux:f32 = 1.0;
-            var vy:f32 = 1.0;
-            if (u ==0){ux = SQRT2;}
-            if (v ==0){vy = SQRT2;}
-            var temp: f32= DCTcoeff( vec2f(f32(u),f32(v)), (k+.5) / 8. );
-            var coef:f32 =  temp * ux * vy;
-            var idx:vec2f = (K+vec2(f32(u),f32(v))+0.5)/ uniforms.resolution.xy;
+             var Cu:f32 = 1.0;
+            var Cv:f32 = 1.0;
+            if (u ==0){Cu = SQRT2;}
+            if (v ==0){Cv = SQRT2;}
+            var temp: f32= DCTcoeff( vec2f(u,v)+0.5, (k+.5) / 8. );
+            var coef:f32 =  temp * Cu * Cv;
+
+            var idx:vec2f = (K+vec2(u,v))/1000.f;
+            // value +=(textureSample(inputTexture, ourSampler, ((K+vec2f(u,v)+0.5))/1000.f)).rgb * DCTcoeff(vec2(u,v), (k+.5)/8.) * (ux) * (vy);
+
             var texture:vec3f=textureSample(inputTexture, ourSampler, idx).rgb;
-            value += texture * coef ;
+            value += texture * coef;
         }
     }
 
-    return vec4f(value, 1.0);
+    return vec4f(value/4.0, 1.0);
 }
 
 

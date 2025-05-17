@@ -53,7 +53,7 @@ const NB_LEVELS:f32= 10.;
 //#define NB_LEVELS (1.+5.*(.5+.5*sin(iTime)))
 
 // You may change the number of frequencies used for the reconstruction for achieving different effects.
-const NB_FREQ:i32= 8;
+const NB_FREQ:i32=8;
 //#define NB_FREQ		int(mod(iTime, 7.)+1.)
 
 fn DCTcoeff(k:vec2f, x:vec2f)->f32
@@ -73,21 +73,21 @@ fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
     
 //This is where the DCT is performed
 
-    for(var x:i32=0; x<8; x++){
-    	for(var y:i32 =0; y<8; y++){
+    for(var x:i32=0; x<NB_FREQ; x++){
+    	for(var y:i32 =0; y<NB_FREQ; y++){
             var kx:f32 = 1.0;
             var ky:f32 = 1.0;
             if (k.x < 0.5){kx = SQRT2;}
             if (k.y < 0.5){ky = SQRT2;}
             var idx:vec2f = (K+vec2f(f32(x),f32(y))+.5)/uniforms.resolution.xy;
-            var texture:vec3f= textureSample(inputTexture, ourSampler, idx).rgb;
-            var temp: vec2f = (vec2f(f32(x),f32(y))+0.5) / 8.;
+            var texture:vec3f= textureSample(inputTexture, ourSampler, 1-idx).rgb;
+            var temp: vec2f = (vec2f(f32(x),f32(y))+0.5) / f32(NB_FREQ);
             var coef = DCTcoeff(k, temp) * kx * ky;
             val += texture * coef ;
         }
     }
 
-    textureStore(outputTexture, vec2u(fsInput.position.xy), vec4f(val/4.0, 1.0));
+    textureStore(outputTexture, vec2u(fsInput.position.xy), vec4f(val, 1.0));
     return vec4f(val, 1.0);
 }
 

@@ -100,6 +100,17 @@ export class DCTModel extends RenderModel {
             ],
         })
 
+    this.bindGroup3 = this.device.createBindGroup({
+            label: 'dct1-bindgroup',
+            layout: bindGroupLayout,
+            entries: [
+                { binding: 0, resource: { buffer: this.uniformBuffer.getBufferObject(),} },
+                { binding: 1, resource: this.renderCtx.getSampler() },
+                { binding: 2, resource: this.textureOut2.createView() },
+                { binding: 3, resource: this.textureOut1.createView() }
+            ],
+        })
+
         this.pipeline1 = this.device.createRenderPipeline({
             label: 'dct1-pipeline',
             layout: pipelineLayout,
@@ -181,7 +192,7 @@ export class DCTModel extends RenderModel {
             }],    
         });
         pass3.setPipeline(this.pipeline3);
-        pass3.setBindGroup(0, this.bindGroup1)
+        pass3.setBindGroup(0, this.bindGroup3)
         pass3.draw(6);
         pass3.end()
 
