@@ -106,8 +106,8 @@ export class DCTModel extends RenderModel {
             entries: [
                 { binding: 0, resource: { buffer: this.uniformBuffer.getBufferObject(),} },
                 { binding: 1, resource: this.renderCtx.getSampler() },
-                { binding: 2, resource: this.textureOut2.createView() },
-                { binding: 3, resource: this.textureOut1.createView() }
+                { binding: 2, resource: this.textureOut1.createView() },
+                { binding: 3, resource: this.textureOut2.createView() }
             ],
         })
 
@@ -168,19 +168,19 @@ export class DCTModel extends RenderModel {
         pass.draw(6);
         pass.end()
 
-        const pass2 = encoder.beginRenderPass({
-            label: 'second',
-            colorAttachments: [{
-                view: this.renderCtx.getView(),
-                clearValue: [1.0, 1.0, 1.0, 1],
-                loadOp: 'clear',
-                storeOp: 'store'
-            }],    
-        });
-        pass2.setPipeline(this.pipeline2);
-        pass2.setBindGroup(0, this.bindGroup2)
-        pass2.draw(6);
-        pass2.end()
+        // const pass2 = encoder.beginRenderPass({
+        //     label: 'second',
+        //     colorAttachments: [{
+        //         view: this.renderCtx.getView(),
+        //         clearValue: [1.0, 1.0, 1.0, 1],
+        //         loadOp: 'clear',
+        //         storeOp: 'store'
+        //     }],    
+        // });
+        // pass2.setPipeline(this.pipeline2);
+        // pass2.setBindGroup(0, this.bindGroup2)
+        // pass2.draw(6);
+        // pass2.end()
 
         const pass3 = encoder.beginRenderPass({
             label: 'third',
