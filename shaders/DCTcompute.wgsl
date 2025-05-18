@@ -32,6 +32,7 @@ fn DCTcoeff(k:vec2f, x:vec2f)->f32
 @compute(8, 8)
 fn compute(@builtin(global_invocation_id) id: vec3u) -> @location(0) vec4f {
 
+var cache = array<array<vec3f, NB_FREQ>, NB_FREQ>;
 
 /// This is the discrete cosine transform step, where 8x8 blocs are converted into frequency space
 
@@ -62,14 +63,14 @@ fn compute(@builtin(global_invocation_id) id: vec3u) -> @location(0) vec4f {
 
     //Colour quantize
 
-   	var fragColor:vec3f = textureLoad(tempTexture, ourSampler, id.xy).rgb;
+   	// var fragColor:vec3f = textureLoad(tempTexture, ourSampler, id.xy).rgb;
     
     // if(texelFetch(iChannel2, ivec2(65, 0), 0).x<0.5)
         // this assumes data between 0 and 1.
-        fragColor = round(fragColor/8.*NB_LEVELS)/NB_LEVELS*8.;
+        // fragColor = round(fragColor/8.*NB_LEVELS)/NB_LEVELS*8.;
 
 
-    textureStore(tempTexture, id.xy, vec4f(fragColor, 1.0));
+    // textureStore(tempTexture, id.xy, vec4f(fragColor, 1.0));
 
     workgroupBarrier()
 
