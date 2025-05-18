@@ -14,7 +14,7 @@ var<uniform> uniforms: Uniforms;
 const PI:f32= 3.1415972;
 const SQRT2:f32= 0.70710678118;
 
-const NB_LEVELS:f32= 10.;
+const NB_LEVELS:f32= 3.;
 //#define NB_LEVELS (1.+5.*fragCoord.x/iResolution.x)
 //#define NB_LEVELS (1.+7.*iMouse.x/iResolution.x)
 //#define NB_LEVELS floor(1.+7.*iMouse.x/iResolution.x)
@@ -82,7 +82,9 @@ fn compute(@builtin(global_invocation_id) global_id: vec3u, @builtin(local_invoc
 
 
 var k:vec2u = local_id.xy;
-cache1[local_id.x][local_id.y]=RGBtoHSL(textureLoad(inputTexture, global_id.xy, 1).rgb);
+var tex = textureLoad(inputTexture, global_id.xy, 1).rgb;
+// tex = RBGtoHSL(tex);
+cache1[local_id.x][local_id.y]=tex;
     workgroupBarrier();
 
 /// This is the discrete cosine transform step, where 8x8 blocs are converted into frequency space
@@ -146,7 +148,10 @@ cache1[local_id.x][local_id.y]=RGBtoHSL(textureLoad(inputTexture, global_id.xy, 
         }
     }
 
-    textureStore(outputTexture, global_id.xy, vec4f(HSLtoRGB(value/4.f), 1.0));
+    value = value / 4.0;
+    // value = HSLtoRGB(value);
+    var output = vec4f(value, 1.0);
+    textureStore(outputTexture, global_id.xy, output);
 }
 
 
