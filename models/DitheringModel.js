@@ -1,10 +1,9 @@
 import { UniformBufferBuilder } from "../Buffer.js";
 import { RenderModel } from "../RenderModel.js";
-import { mat4 } from "../lib/esm/index.js"
 import { state } from "../utils.js";
 
-let IMAGE_URL = './rose.jpg'
-let DITHERING_SHADER_PATH = "./shaders/dithering-mat4.wgsl"
+let IMAGE_URL = './rose.png'
+let DITHERING_SHADER_PATH = "./shaders/dithering.wgsl"
 
 export class DitheringModel extends RenderModel {
     constructor(device, renderCtx) {
@@ -20,10 +19,10 @@ export class DitheringModel extends RenderModel {
     createResources() {
         const bufferBuilder = new UniformBufferBuilder(this.device);
         this.uniformBuffer = bufferBuilder
-                                        .add({ name: 'transform-matrix', type: 'mat4'})
                                         .add({ name: 'resolution', type: 'vec2' })
                                         .add({ name: 'col-nb', type: 'f32'})
                                         .add({ name: 'dith-str', type: 'f32' })
+                                        .add({ name: 'bayer_filter_size', type: 'f32' })
                                         .build();
 
 
@@ -79,41 +78,27 @@ export class DitheringModel extends RenderModel {
 
     updateUniforms(...args) {
         const canvasSize = this.renderCtx.getCanvasSize();
-        this.uniformBuffer.set('transform-matrix', DitheringModel.transformCanvas(state.p, canvasSize[0], canvasSize[1]));
         this.uniformBuffer.set('resolution', canvasSize);
         this.uniformBuffer.set('col-nb', state.colNb);
         this.uniformBuffer.set('dith-str', state.ditherStrength);
+        this.uniformBuffer.set('bayer_filter_size', state.bayerFilterSize)
         this.device.queue.writeBuffer(this.uniformBuffer.getBufferObject(), 0, this.uniformBuffer.getBuffer());
     }
 
-    addControllers() {
-        const rot = document.getElementById('control-p');
-        rot.addEventListener('input', () => {
-            state.p = parseFloat(rot.value) / 255.0;
-            this.render();
-        });
-    
-        const colNb = document.getElementById('col-nb');
-        colNb.addEventListener('input', () => {
-            state.colNb = parseFloat(colNb.value);
-            this.render();
-        });
-    
-        const dithStr = document.getElementById('dith-str');
-        dithStr.addEventListener('input', () => {
-            state.ditherStrength = parseFloat(dithStr.value) / 255.0;
-            this.render();
-        })
-    }
+    addControls() {
+        const controls = [
+            { type: 'range', id: 'col-nb', label: 'color nb', min: 2, max: 20, value: 2, step: 1, handler: v => state.colNb = v },
+            { type: 'range', id: 'dith-str', label: 'dither strength', min: 0, max: 255, value: 255, step: 1, handler: v => state.ditherStrength = v / 255.0 },
+            { type: 'radio', name: 'bayer-size', label: 'bayer size', options: [2, 4, 8], default: 8, handler: v => state.bayerFilterSize = v }
+        ];
 
-    encodeRenderPass() {
-
+        this.addControllers(controls);
     }
 
     async init() {
         await this.loadAsset();
         this.createResources();
-        this.addControllers();
+        this.addControls();
     }
 
     render() {
@@ -138,22 +123,22 @@ export class DitheringModel extends RenderModel {
     }
 
 
-    static transformCanvas(p, canvasWidth, canvasHeight) {
-        let angle = p*180.
-        let radians = angle * (Math.PI / 180.);
+    // static transformCanvas(p, canvasWidth, canvasHeight) {
+    //     let angle = p*180.
+    //     let radians = angle * (Math.PI / 180.);
     
-        const W = canvasWidth * Math.abs(Math.cos(radians)) + canvasHeight * Math.abs(Math.sin(radians));
-        const H = canvasWidth * Math.abs(Math.sin(radians)) + canvasHeight * Math.abs(Math.cos(radians));
-        const a = Math.min(canvasWidth / W, canvasHeight / H);
+    //     const W = canvasWidth * Math.abs(Math.cos(radians)) + canvasHeight * Math.abs(Math.sin(radians));
+    //     const H = canvasWidth * Math.abs(Math.sin(radians)) + canvasHeight * Math.abs(Math.cos(radians));
+    //     const a = Math.min(canvasWidth / W, canvasHeight / H);
 
-        const rotationMatrix = mat4.create();
-        mat4.rotate(rotationMatrix, rotationMatrix, radians, [0, 0, 1]);
+    //     const rotationMatrix = mat4.create();
+    //     mat4.rotate(rotationMatrix, rotationMatrix, radians, [0, 0, 1]);
     
-        const scaleMatrix = mat4.create();
-        mat4.scale(scaleMatrix, scaleMatrix, [a, a, 1]);
+    //     const scaleMatrix = mat4.create();
+    //     mat4.scale(scaleMatrix, scaleMatrix, [a, a, 1]);
         
-        const transformMatrix = mat4.multiply(mat4.create(), rotationMatrix, scaleMatrix);
+    //     const transformMatrix = mat4.multiply(mat4.create(), rotationMatrix, scaleMatrix);
     
-        return transformMatrix;
-    }
+    //     return transformMatrix;
+    // }
 }

@@ -18,8 +18,6 @@ async function init() {
     const format = navigator.gpu.getPreferredCanvasFormat()
     context.configure({ device, format })
 
-
-
     //     const img = document.createElement("img");
     //     img.src = new URL(
     //     "rose.png",
