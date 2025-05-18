@@ -32,13 +32,57 @@ const NB_FREQ:i32= 8;
 var<workgroup> cache1: array<array<vec3f, NB_FREQ>, NB_FREQ>;
 var<workgroup> cache2: array<array<vec3f, NB_FREQ>, NB_FREQ>;
 
+const AFX_EPSILON: f32= 0.001;
+
+
+  fn RGBtoHCV(RGB:vec3f)->vec3f {
+    //stole from acerola FX
+        // Based on work by Sam Hocevar and Emil Persson
+        var P:vec4f;
+        if (RGB.g < RGB.b) 
+        { 
+            P=vec4f(RGB.bg, -1.0, 2.0/3.0);
+        } else {
+            P=vec4f(RGB.gb, 0.0, -1.0/3.0);
+        }
+        var Q:vec4f;
+        if (RGB.r < P.x){
+            Q = vec4f(P.xyw, RGB.r);
+        } else {
+            Q = vec4f(RGB.r, P.yzx);
+        }
+        let C:f32 = Q.x - min(Q.w, Q.y);
+        let H:f32 = abs((Q.w - Q.y) / (6 * C + AFX_EPSILON) + Q.z);
+        return vec3f(H, C, Q.x);
+    }
+
+    fn RGBtoHSL(RGB:vec3f)->vec3f {
+        let HCV:vec3f = RGBtoHCV(RGB);
+        let L:f32 = HCV.z - HCV.y * 0.5;
+        let S:f32 = HCV.y / (1 - abs(L * 2 - 1) + AFX_EPSILON);
+        return vec3f(HCV.x, S, L);
+    }
+
+    fn HUEtoRGB(H:f32)->vec3f {
+        var R:f32 = abs(H * 6 - 3) - 1;
+        var G:f32 = 2 - abs(H * 6 - 2);
+        var B:f32 = 2 - abs(H * 6 - 4);
+        return vec3f(R,G,B);
+    }
+
+    fn HSLtoRGB(HSL:vec3f)->vec3f {
+        var RGB: vec3f = HUEtoRGB(HSL.x);
+        var C:f32 = (1 - abs(2 * HSL.z - 1)) * HSL.y;
+        return (RGB - 0.5) * C + HSL.z;
+    }
+
 @compute @workgroup_size(8, 8)
 fn compute(@builtin(global_invocation_id) global_id: vec3u, @builtin(local_invocation_id)local_id:vec3u) {
 
 
 
 var k:vec2u = local_id.xy;
-cache1[local_id.x][local_id.y]=textureLoad(inputTexture, global_id.xy, 1).rgb;
+cache1[local_id.x][local_id.y]=RGBtoHSL(textureLoad(inputTexture, global_id.xy, 1).rgb);
     workgroupBarrier();
 
 /// This is the discrete cosine transform step, where 8x8 blocs are converted into frequency space
@@ -95,11 +139,14 @@ cache1[local_id.x][local_id.y]=textureLoad(inputTexture, global_id.xy, 1).rgb;
             var coef:f32 =  temp * ux * vy;
             // var idx:vec2f = (K+vec2(f32(u),f32(v))+0.5)/ uniforms.resolution.xy;
             var texture:vec3f=cache2[u][v];
+            // if ((u == 2 && v==2) || (u==3 && v==3)|| (u==3 && v==4)){
+            // texture=cache2[0][0];
+            // }
             value += texture * coef ;
         }
     }
 
-    textureStore(outputTexture, global_id.xy, vec4f(value/4.f, 1.0));
+    textureStore(outputTexture, global_id.xy, vec4f(HSLtoRGB(value/4.f), 1.0));
 }
 
 
