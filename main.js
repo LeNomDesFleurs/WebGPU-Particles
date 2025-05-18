@@ -50,7 +50,6 @@ async function init() {
                 access: "write-only",
                 format: "rgba8unorm",
                 viewDimension: '2d',
-
             },
         },
         

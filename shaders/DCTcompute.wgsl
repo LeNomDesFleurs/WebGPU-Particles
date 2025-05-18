@@ -2,6 +2,7 @@
 
 struct Uniforms {
     resolution: vec2f,
+    freq: f32,
 };
 
 @group(0) @binding(0)
@@ -20,7 +21,6 @@ const NB_LEVELS:f32= 10.;
 //#define NB_LEVELS (1.+5.*(.5+.5*sin(iTime)))
 
 // You may change the number of frequencies used for the reconstruction for achieving different effects.
-const NB_FREQ:i32= 8;
 //#define NB_FREQ		int(mod(iTime, 7.)+1.)
 
 fn DCTcoeff(k:vec2f, x:vec2f)->f32
@@ -28,6 +28,7 @@ fn DCTcoeff(k:vec2f, x:vec2f)->f32
     return cos(PI*k.x*x.x)*cos(PI*k.y*x.y);
 }
 
+const NB_FREQ:i32= 8;
 var<workgroup> cache1: array<array<vec3f, NB_FREQ>, NB_FREQ>;
 var<workgroup> cache2: array<array<vec3f, NB_FREQ>, NB_FREQ>;
 
@@ -45,9 +46,9 @@ cache1[local_id.x][local_id.y]=textureLoad(inputTexture, global_id.xy, 1).rgb;
     var val:vec3f = vec3(0.);
     
 //This is where the DCT is performed
-
-    for(var x:i32=0; x<8; x++){
-    	for(var y:i32 =0; y<8; y++){
+    
+    for(var x:i32=0; x<NB_FREQ; x++){
+    	for(var y:i32 =0; y<NB_FREQ; y++){
             var kx:f32 = 1.0;
             var ky:f32 = 1.0;
             if (k.x ==0){kx = SQRT2;}
