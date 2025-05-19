@@ -2,6 +2,9 @@
 /// Discrete cosine transform step, where 8x8 blocs are converted into frequency space
 ///
 
+
+
+
 struct Uniforms {
     resolution: vec2f,
 };

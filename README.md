@@ -51,3 +51,7 @@ Experimenting with particle systems in web-GPU
 [writing to texture from compute shader](https://gist.github.com/greggman/295e38eeedf5957ac50179308666d98b)
 
 [GPU query](https://developer.mozilla.org/en-US/docs/Web/API/GPUQuerySet)
+
+[Webgpu shadertoy](https://pongasoft.github.io/webgpu-shader-toy/)
+
+[WebGpu preprocessor Linkage](https://github.com/JSideris/wgsl-plus/blob/master/src/tools/link.ts)
