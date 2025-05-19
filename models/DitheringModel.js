@@ -20,9 +20,12 @@ export class DitheringModel extends RenderModel {
         const bufferBuilder = new UniformBufferBuilder(this.device);
         this.uniformBuffer = bufferBuilder
                                         .add({ name: 'resolution', type: 'vec2' })
-                                        .add({ name: 'col-nb', type: 'f32'})
+                                        .add({ name: 'levels_per_channel', type: 'f32'})
                                         .add({ name: 'dith-str', type: 'f32' })
                                         .add({ name: 'bayer_filter_size', type: 'f32' })
+                                        .add({ name: 'randomize_r', type: 'f32'})
+                                        .add({ name: 'randomize_g', type: 'f32'})
+                                        .add({ name: 'randomize_b', type: 'f32'})
                                         .build();
 
 
@@ -79,15 +82,18 @@ export class DitheringModel extends RenderModel {
     updateUniforms(...args) {
         const canvasSize = this.renderCtx.getCanvasSize();
         this.uniformBuffer.set('resolution', canvasSize);
-        this.uniformBuffer.set('col-nb', state.colNb);
+        this.uniformBuffer.set('levels_per_channel', state.levelPerChannel);
         this.uniformBuffer.set('dith-str', state.ditherStrength);
-        this.uniformBuffer.set('bayer_filter_size', state.bayerFilterSize)
+        this.uniformBuffer.set('bayer_filter_size', state.bayerFilterSize);
+        this.uniformBuffer.set('randomize_r', state.randomizeR);
+        this.uniformBuffer.set('randomize_g', state.randomizeG);
+        this.uniformBuffer.set('randomize_b', state.randomizeB);
         this.device.queue.writeBuffer(this.uniformBuffer.getBufferObject(), 0, this.uniformBuffer.getBuffer());
     }
 
     addControls() {
         const controls = [
-            { type: 'range', id: 'col-nb', label: 'color nb', min: 2, max: 20, value: 2, step: 1, handler: v => state.colNb = v },
+            { type: 'range', id: 'levels_per_channel', label: 'levels per channel', min: 2, max: 20, value: 2, step: 1, handler: v => state.levelPerChannel = v },
             { type: 'range', id: 'dith-str', label: 'dither strength', min: 0, max: 255, value: 255, step: 1, handler: v => state.ditherStrength = v / 255.0 },
             { type: 'radio', name: 'bayer-size', label: 'bayer size', options: [2, 4, 8], default: 8, handler: v => state.bayerFilterSize = v }
         ];

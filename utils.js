@@ -1,7 +1,10 @@
 export const state = {
-	colNb: 2.0,
+	levelPerChannel: 2.0,
 	ditherStrength: 1.0,
-	bayerFilterSize: 8.0
+	bayerFilterSize: 8.0,
+	randomizeR: 0.0,
+	randomizeG: 0.0,
+	randomizeB: 0.0
 }
 
 export const CANVAS_ID = 'gfx';

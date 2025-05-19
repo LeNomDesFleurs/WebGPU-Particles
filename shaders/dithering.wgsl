@@ -1,8 +1,13 @@
+// Dithering : can prevent 'color banding' - breaks up the flat areas into small structured patterns, tricking the eyes into seeing smoother transitions.
+
 struct Uniforms {
     resolution: vec2f,
-    colorNb: f32,
+    levels_per_channel: f32, // allowed number of levels (color values between 0. and 1.) per channel (rgb)
     dith_strength: f32,
-    bayer_filter_size: f32
+    bayer_filter_size: f32,
+    randomize_r: f32,
+    randomize_g: f32,
+    randomize_b: f32
 };
 
 struct OurVertexShaderOutput {
@@ -10,34 +15,26 @@ struct OurVertexShaderOutput {
     @location(0) texcoord: vec2f,
 };
 
-@group(0) @binding(0)
-var<uniform> uniforms: Uniforms;
-@group(0) @binding(1) var ourSampler: sampler;
-@group(0) @binding(2) var ourTexture: texture_2d<f32>;
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(0) @binding(1) var uSampler: sampler;
+@group(0) @binding(2) var uTexture: texture_2d<f32>;
 
-// TODO customize BAYER_SIZE => prepare function or already intialized arrays
 // TODO think -> some other dithering than bayer ? ==> what if i change this every frame ? (randomize)
 
-@vertex
-fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
-    let vertices = array(
-        // 1st triangle
-        vec4f( -1.0, -1.0, 0.0,  0.0),  // center
-        vec4f(1.0, -1.0, 1.0,  0.0),  // right, center
-        vec4f(-1.0, 1.0, 0.0,  1.0),  // center, top
+const VERTICES = array(
+    // 1st triangle
+    vec4f( -1.0, -1.0, 0.0,  0.0),  // center
+    vec4f(1.0, -1.0, 1.0,  0.0),  // right, center
+    vec4f(-1.0, 1.0, 0.0,  1.0),  // center, top
 
-        // 2nd triangle
-        vec4f(-1.0, 1.0, 0.0,  1.0),  // center, top
-        vec4f( 1.0, -1.0, 1.0,  0.0),  // right, center
-        vec4f( 1.0, 1.0, 1.0,  1.0),  // right, top
-    );
-    var vsOutput: OurVertexShaderOutput;
+    // 2nd triangle
+    vec4f(-1.0, 1.0, 0.0,  1.0),  // center, top
+    vec4f( 1.0, -1.0, 1.0,  0.0),  // right, center
+    vec4f( 1.0, 1.0, 1.0,  1.0),  // right, top
+);
 
-    let vertex = vertices[vertexIndex];
-    vsOutput.position = vec4f(vertex.xy, 0.0, 1.0);
-    vsOutput.texcoord = vertex.zw;
-    return vsOutput;
-}
+// Bayer dithering (ordered dithering) : uses a repeating matrix of pre-defined values 
+// Why Bayer filter:
 
 const BAYER_FILTER_2 = array(
     0., 2.,
@@ -62,13 +59,21 @@ const BAYER_FILTER_8 = array(
     63., 31., 55., 23., 61., 29., 53., 21.
 );
 
-// Getting the specific pattern from the grid
-fn getBayer(uvScreenSpace: vec2f) ->f32 {
-    let BAYER_SIZE = 8.0;
+@vertex
+fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
+    var vsOutput: OurVertexShaderOutput;
 
+    let vertex = VERTICES[vertexIndex];
+    vsOutput.position = vec4f(vertex.xy, 0.0, 1.0);
+    vsOutput.texcoord = vertex.zw;
+    return vsOutput;
+}
+
+
+
+fn applyBayer(uvScreenSpace: vec2f) ->f32 {
     var uv = uvScreenSpace * uniforms.resolution % uniforms.bayer_filter_size;
 
-    // let uv = modf(uvScreenSpace.xy, vec2f(BAYER_SIZE));
     let index = i32(uv.y * uniforms.bayer_filter_size + uv.x);
     if (uniforms.bayer_filter_size == 2.) {
         return BAYER_FILTER_2[index] / 4.;
@@ -79,21 +84,30 @@ fn getBayer(uvScreenSpace: vec2f) ->f32 {
     }
 }
 
-// Crushing the colors
-fn quantize(channel: f32, period: f32) -> f32 {
-    return floor((channel + period / 2.0) / period) * period;
+// Quantization: the process of reducing the number of possible values (only a fixed number of discrete values)
+fn quantize(channel: f32, quant_step: f32) -> f32 {
+    return floor((channel + quant_step / 2.0) / quant_step) * quant_step;
+}
+
+fn random(uv: vec2f) -> f32 {
+    return fract(sin(dot(uv, vec2f(12.9898, 78.233))) * 43758.5453);
 }
 
 @fragment
 fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
-    let fragCoord = fsInput.texcoord;
-    let period = vec3(1.0 / (f32(uniforms.colorNb) - 1.0));
+    // quantization step : the space between allowed color values.
+    let quant_step: f32 = 1.0 / (uniforms.levels_per_channel - 1.0); 
 
-    var output = textureSample(ourTexture, ourSampler, fsInput.texcoord).rgb;
-    output += (getBayer(fragCoord) - 0.5) * period * uniforms.dith_strength;
-    output = vec3f(quantize(output.r, period.r),
-    quantize(output.g, period.g),
-    quantize(output.b, period.b));
+
+    var output = textureSample(uTexture, uSampler, fsInput.texcoord).rgb;
+    output += (applyBayer(fsInput.texcoord) - 0.5) * quant_step * uniforms.dith_strength;
+
+    let rand_color : f32 = random(fsInput.texcoord);
+    output = vec3f(
+        select(quantize(output.r, quant_step), rand_color, uniforms.randomize_r != 0.0),
+        select(quantize(output.g, quant_step), rand_color, uniforms.randomize_g != 0.0),
+        select(quantize(output.b, quant_step), rand_color, uniforms.randomize_b != 1.0)
+    );
 
     return vec4f(output, 1.0);
 }

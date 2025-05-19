@@ -21,8 +21,8 @@ async function init() {
     // await modelDithering.init();
     // modelDithering.render();
 
-    await modelSorting.init();
-    modelSorting.render();
+    // await modelSorting.init();
+    // modelSorting.render();
     
 }
 

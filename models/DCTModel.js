@@ -129,9 +129,7 @@ export class DCTModel extends RenderModel {
                 targets: [{ format : this.renderCtx.getFormat() }],
             },
         })
-
     }
-
 
     updateUniforms(...args) {
         const canvasSize = this.renderCtx.getCanvasSize();
