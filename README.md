@@ -51,3 +51,10 @@ Experimenting with particle systems in web-GPU
 [writing to texture from compute shader](https://gist.github.com/greggman/295e38eeedf5957ac50179308666d98b)
 
 [GPU query](https://developer.mozilla.org/en-US/docs/Web/API/GPUQuerySet)
+
+
+### Dithering
+
+(Optimal Parallel Error-Diffusion Dithering)[https://cs.wellesley.edu/~pmetaxas/ei99.pdf]
+
+(When Parallelism Gets Tricky: Accelerating Floyd-Steinberg on the Mali GPU)[https://community.arm.com/arm-community-blogs/b/mobile-graphics-and-gaming-blog/posts/when-parallelism-gets-tricky-accelerating-floyd-steinberg-on-the-mali-gpu]
