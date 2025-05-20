@@ -1,5 +1,5 @@
 // Dithering : can prevent 'color banding' - breaks up the flat areas into small structured patterns, tricking the eyes into seeing smoother transitions.
-
+// Dither : nudging pixel values slightly up or down to better simulate gradients, even with a reduced number of colors 
 struct Uniforms {
     resolution: vec2f,
     levels_per_channel: f32, // allowed number of levels (color values between 0. and 1.) per channel (rgb)
@@ -34,8 +34,6 @@ const VERTICES = array(
 );
 
 // Bayer dithering (ordered dithering) : uses a repeating matrix of pre-defined values 
-// Why Bayer filter:
-
 const BAYER_FILTER_2 = array(
     0., 2.,
     3., 1.
@@ -69,24 +67,29 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     return vsOutput;
 }
 
+fn getBayerValue(uvScreenSpace: vec2f) ->f32 {
+    let bayerCoords = (uvScreenSpace * uniforms.resolution) % uniforms.bayer_filter_size;
 
-
-fn applyBayer(uvScreenSpace: vec2f) ->f32 {
-    var uv = uvScreenSpace * uniforms.resolution % uniforms.bayer_filter_size;
-
-    let index = i32(uv.y * uniforms.bayer_filter_size + uv.x);
+    // Bayer filter value then normalized by the maximum size
+    let index = i32(bayerCoords.y * uniforms.bayer_filter_size + bayerCoords.x);
+    var value = 0.5;
     if (uniforms.bayer_filter_size == 2.) {
-        return BAYER_FILTER_2[index] / 4.;
+        value = BAYER_FILTER_2[index] / 4.;
     } else if (uniforms.bayer_filter_size == 4.) {
-        return BAYER_FILTER_4[index] / 16.;
+        value = BAYER_FILTER_4[index] / 16.;
     } else {
-        return BAYER_FILTER_8[index] / 64.;
+        value = BAYER_FILTER_8[index] / 64.;
     }
+
+    // set range from -0.5 to 0.5
+    return value - 0.5; 
 }
 
 // Quantization: the process of reducing the number of possible values (only a fixed number of discrete values)
-fn quantize(channel: f32, quant_step: f32) -> f32 {
-    return floor((channel + quant_step / 2.0) / quant_step) * quant_step;
+fn quantize(col: f32, quantStep: f32) -> f32 {
+    let centered = col + quantStep / 2.0; // Add the half of the quant step to determine which level the value belongs to (centered between levels).
+    let level = floor(centered / quantStep);
+    return level * quantStep;
 }
 
 fn random(uv: vec2f) -> f32 {
@@ -96,18 +99,16 @@ fn random(uv: vec2f) -> f32 {
 @fragment
 fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
     // quantization step : the space between allowed color values.
-    let quant_step: f32 = 1.0 / (uniforms.levels_per_channel - 1.0); 
+    let quantStep: f32 = 1.0 / (uniforms.levels_per_channel - 1.0); 
 
+    var imageCol = textureSample(uTexture, uSampler, fsInput.texcoord).rgb;
+    imageCol += getBayerValue(fsInput.texcoord) * quantStep * uniforms.dith_strength;
 
-    var output = textureSample(uTexture, uSampler, fsInput.texcoord).rgb;
-    output += (applyBayer(fsInput.texcoord) - 0.5) * quant_step * uniforms.dith_strength;
-
-    let rand_color : f32 = random(fsInput.texcoord);
-    output = vec3f(
-        select(quantize(output.r, quant_step), rand_color, uniforms.randomize_r != 0.0),
-        select(quantize(output.g, quant_step), rand_color, uniforms.randomize_g != 0.0),
-        select(quantize(output.b, quant_step), rand_color, uniforms.randomize_b != 1.0)
+    let randCol : f32 = random(fsInput.texcoord);
+    return vec4f(
+        select(quantize(imageCol.r, quantStep), randCol, uniforms.randomize_r != 0.0),
+        select(quantize(imageCol.g, quantStep), randCol, uniforms.randomize_g != 0.0),
+        select(quantize(imageCol.b, quantStep), randCol, uniforms.randomize_b != 0.0),
+        1.0
     );
-
-    return vec4f(output, 1.0);
 }

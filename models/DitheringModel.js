@@ -94,7 +94,7 @@ export class DitheringModel extends RenderModel {
     addControls() {
         const controls = [
             { type: 'range', id: 'levels_per_channel', label: 'levels per channel', min: 2, max: 20, value: 2, step: 1, handler: v => state.levelPerChannel = v },
-            { type: 'range', id: 'dith-str', label: 'dither strength', min: 0, max: 255, value: 255, step: 1, handler: v => state.ditherStrength = v / 255.0 },
+            { type: 'range', id: 'dith-str', label: 'dither strength', min: 0, max: 511, value: 255, step: 1, handler: v => state.ditherStrength = v / 255.0 },
             { type: 'radio', name: 'bayer-size', label: 'bayer size', options: [2, 4, 8], default: 8, handler: v => state.bayerFilterSize = v }
         ];
 
