@@ -22,10 +22,8 @@ async function init() {
         modelDithering.render();
 	});
 
-
     // const renderContext = await getRendererContextInstance();
     // const pixelSortingModel = new PixelSortingModel(renderContext.getDevice(), renderContext);
-
 
     // // must be at least 80 bytes
     // const uniformBufferSize = (13 * 4); // TODO CHECK VALUE
