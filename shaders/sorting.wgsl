@@ -1,4 +1,7 @@
 
+// stuff to tweak
+// CS_PixelSort workgroup size
+
 const AFX_DEBUG_MASK:i32 = 0;
 const AFX_DEBUG_SPANS:i32 = 0;
 const AFX_HORIZONTAL_SORT:i32 = 0;
