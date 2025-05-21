@@ -15,7 +15,7 @@ async function init() {
     // await modelDCT.init();
     // modelDCT.render();
 
-    await modelDithering.init('./rose.png')
+    await modelDithering.init()
     modelDithering.render()
 
     // const renderContext = await getRendererContextInstance();

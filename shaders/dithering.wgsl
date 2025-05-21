@@ -35,7 +35,7 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
 
     let vertex = vertices[vertexIndex];
     vsOutput.position = vec4f(vertex.xy, 0.0, 1.0);
-    vsOutput.texcoord = vertex.zw;
+    vsOutput.texcoord = vec2f(vertex.z, 1-vertex.w);
     return vsOutput;
 }
 
