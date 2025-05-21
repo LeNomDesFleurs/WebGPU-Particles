@@ -82,9 +82,17 @@ export class RenderModel {
             console.log(e);
         }
     }
+    
+    async replaceTexture(name, bitmap, format = 'rgba8unorm') { 
+            const oldTexture = this.textures[name];
+    if (oldTexture && typeof oldTexture.destroy === 'function') {
+        oldTexture.destroy();
+    }
+        await this.addTexture(name, bitmap, format = 'rgba8unorm');
+    }
 
-    async addTexture(name, path, format='rgba8unorm') {
-        const source = await loadImageBitmap(path);
+    async addTexture(name, blob, format='rgba8unorm') {
+        const source = await loadImageBitmap(blob);
         const texture = this.device.createTexture({
             label: name,
             format,
@@ -95,11 +103,12 @@ export class RenderModel {
         })
         this.textures[name] = texture;
         this.device.queue.copyExternalImageToTexture(
-            { source, flipY: true },
+            { source, flipY:true },
             { texture },
             { width: source.width, height: source.height },
 		);
 
         return texture;
     }
+
 }

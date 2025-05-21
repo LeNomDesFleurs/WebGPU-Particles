@@ -16,10 +16,12 @@ export const TYPE_SIZE = {
 }
 
 //get bitmap from url
-export async function loadImageBitmap(url) {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    return await createImageBitmap(blob, { colorSpaceConversion: 'none' });
+export async function loadImageBitmap(bloborurl) {
+	if (! (bloborurl instanceof ImageBitmap)) {
+		const res = await fetch(bloborurl);
+		bloborurl = await res.blob();
+	}
+	return await createImageBitmap(bloborurl, { colorSpaceConversion: 'none' });
 }
 
 export async function loadWGSL(url) {

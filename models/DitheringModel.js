@@ -2,7 +2,7 @@ import { UniformBufferBuilder } from "../Buffer.js";
 import { RenderModel } from "../RenderModel.js";
 import { state } from "../utils.js";
 
-let IMAGE_URL = './rose.png'
+var IMAGE_URL = './rose.png'
 let DITHERING_SHADER_PATH = "./shaders/dithering.wgsl"
 
 export class DitheringModel extends RenderModel {
@@ -14,6 +14,11 @@ export class DitheringModel extends RenderModel {
     async loadAsset() {
         await this.addTexture('main-rose', IMAGE_URL);
         await this.addShaderModule('dithering', DITHERING_SHADER_PATH);
+    }
+
+    async update_image(file) { 
+        await this.replaceTexture('main-rose', file);
+        await this.createResources();
     }
 
     createResources() {
@@ -94,6 +99,8 @@ export class DitheringModel extends RenderModel {
 
         this.addControllers(controls);
     }
+
+    
 
     async init() {
         await this.loadAsset();
