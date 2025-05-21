@@ -36,6 +36,7 @@ Experimenting with particle systems in web-GPU
 - [ ] keyboard shortcut interaction
 - [ ] shader preprocessor (include)
 - [ ] chain shaders
+- [ ] preview original
 
 
 ## References
