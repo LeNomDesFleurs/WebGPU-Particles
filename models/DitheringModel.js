@@ -12,12 +12,12 @@ export class DitheringModel extends RenderModel {
     }
 
     async loadAsset() {
-        await this.addTexture('main-rose', IMAGE_URL);
+        await this.addTexture('input', IMAGE_URL);
         await this.addShaderModule('dithering', DITHERING_SHADER_PATH);
     }
 
     async update_image(file) { 
-        await this.replaceTexture('main-rose', file);
+        await this.replaceTexture('input', file);
         await this.createResources();
     }
 
@@ -66,7 +66,7 @@ export class DitheringModel extends RenderModel {
             entries: [
                 { binding: 0, resource: { buffer: this.uniformBuffer.getBufferObject(),} },
                 { binding: 1, resource: this.renderCtx.getSampler() },
-                { binding: 2, resource: this.textures['main-rose'].createView() },
+                { binding: 2, resource: this.textures['input'].createView() },
             ],
         })
 
