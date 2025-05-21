@@ -10,6 +10,7 @@ const AFX_HORIZONTAL_SORT:i32 = 0;
 
 
 struct Uniforms{
+    resolution:vec2f,
 // Adjust the threshold at which dark pixels are omitted from the mask.
 // 0.0 - 0.5
     _LowThreshold:f32,
@@ -18,12 +19,6 @@ struct Uniforms{
     _HighThreshold:f32,
 // Invert sorting mask.
     _InvertMask:f32,
-// Adjust the random offset of each segment to reduce uniformity.
-// -0.01 - 0.01
-    _MaskRandomOffset:f32,
-// Animate the random offset
-// 0 - 30
-    _AnimationSpeed:f32,
 // Adjust the max length of sorted spans. This will heavily impact performance.
 // 0 - 256
     _SpanLimit:f32,
@@ -41,19 +36,16 @@ What color information to sort by
 // Adjust gamma of sorted pixels to accentuate them.
 // 0.1 - 5.0
  _SortedGamma:f32,
- _FrameTime:f32, 
- BUFFER_WIDTH:f32,
- BUFFER_HEIGHT:f32,
+
 };
 
 @group(0) @binding(0) var<uniform> uni: Uniforms;
-@group(0) @binding(1) var inputSampler: sampler;
-@group(0) @binding(2) var inputTexture: texture_2d<f32>;
-@group(0) @binding(3) var outputTexture: texture_storage_2d<rgba8unorm, write>;
+@group(0) @binding(1) var inputTexture: texture_2d<f32>;
+@group(0) @binding(2) var outputTexture: texture_storage_2d<rgba8unorm, write>;
 //storage Buffers
-@group(0) @binding(4) var s_Mask: texture_storage_2d<r32sint, read_write>;
-@group(0) @binding(5) var s_SortValue: texture_storage_2d<r32float, read_write>;
-@group(0) @binding(6) var s_SpanLengths: texture_storage_2d<r32uint, read_write>;
+@group(0) @binding(3) var s_Mask: texture_storage_2d<r32sint, read_write>;
+@group(0) @binding(4) var s_SortValue: texture_storage_2d<r32float, read_write>;
+@group(0) @binding(5) var s_SpanLengths: texture_storage_2d<r32uint, read_write>;
 
 
 
@@ -104,32 +96,11 @@ fn hash(nn:u32)->f32 {
 
 @compute @workgroup_size(8, 8)
 fn CS_CreateMask(@builtin(global_invocation_id) id: vec3u) {
-    // var pixelSize:vec2f = vec2f(f32(uni.BUFFER_HEIGHT), f32(uni.BUFFER_WIDTH));
-
-// #if AFX_HORIZONTAL_SORT == 0
-    var seed: u32  = id.x * u32(uni.BUFFER_WIDTH);
-// #else
-    // seed: u32 = id.y * BUFFER_HEIGHT;
-// #endif
-
-    // rand:f32 = hash(seed + (_FrameTime * _AnimationSpeed)) * _MaskRandomOffset;
-    // no animation
-    // var rand:f32 = 0.f;//hash(seed);
-
-    // var uv:vec2u = vec2u(vec2f(id.xy) / vec2f(f32(uni.BUFFER_HEIGHT), f32(uni.BUFFER_WIDTH)));
-    
-// #if AFX_HORIZONTAL_SORT == 0
-    // uv.y = uv.y + u32(rand);
-// #else
-    // uv.x += rand;
-// #endif
-
+    // var pixelSize:vec2f = vec2f(f32(uni.resolution.y), f32(uni.resolution.x));
+    var seed: u32  = id.x * u32(uni.resolution.x);
     var col: vec4f = textureLoad(inputTexture, id.xy, u32(0));
-
     var l:f32 = Luminance(col.rgb);
-
     var result:i32 = 1;
-
     if (l < uni._LowThreshold || uni._HighThreshold < l)
        { result = 0;}
     
@@ -151,16 +122,11 @@ fn CS_VisualizeSpans(@builtin(global_invocation_id) id: vec3u) {
     var spanLength:u32 = textureLoad(s_SpanLengths, id.xy).r;
 
     if (spanLength >= 1) {
-        var seed:u32 = id.x + u32(uni.BUFFER_WIDTH) * id.y + u32(uni.BUFFER_WIDTH) * u32(uni.BUFFER_HEIGHT);
+        var seed:u32 = id.x + u32(uni.resolution.x) * id.y + u32(uni.resolution.x) * u32(uni.resolution.y);
         var c:vec4f = vec4f(hash(seed), hash(seed * 2), hash(seed * 3), 1.0f);
 
         for (var i:u32 = 0; i < spanLength; i++) {
-// #if AFX_HORIZONTAL_SORT == 0
             var idx:vec2u = vec2u(id.x, id.y + i);
-// #else
-//             uint2 idx = uint2(id.x + i, id.y);
-// #endif
-
             textureStore(outputTexture, idx, vec4(c));
         }
     }
@@ -194,36 +160,24 @@ fn CS_ClearBuffers(id: vec3u) {
 
 @compute @workgroup_size(8, 8)
 fn CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u) {
-    var seed:u32 = id.x + u32(uni.BUFFER_WIDTH) * id.y + u32(uni.BUFFER_WIDTH) * u32(uni.BUFFER_HEIGHT);
+    var seed:u32 = id.x + u32(uni.resolution.x) * id.y + u32(uni.resolution.x) * u32(uni.resolution.y);
     var idx:vec2u = vec2u(0);
     var pos:u32 = 0;
     var spanStartIndex:u32 = 0;
     var spanLength:u32 = 0;
 
-// #if AFX_HORIZONTAL_SORT == 0
-    var screenLimit:u32 = u32(uni.BUFFER_HEIGHT);
-// #else
-    // screenLimit:u32 = BUFFER_WIDTH;
-// #endif
+    var screenLimit:u32 = u32(uni.resolution.y);
 
     var spanLimit:u32 = u32(f32(uni._SpanLimit) - (hash(seed) * f32(uni._MaxRandomOffset)));
 
     while (pos < screenLimit) {
-// #if AFX_HORIZONTAL_SORT == 0
         idx = vec2u(id.x, pos);
-// #else
-        // idx = vec2u(pos, id.y);
-// #endif
 
         var mask:i32 = textureLoad(s_Mask, idx).r;
         pos++;
 
         if (mask == 0 || spanLength >= spanLimit) {
-// #if AFX_HORIZONTAL_SORT == 0
             idx = vec2u(id.x, spanStartIndex);
-// #else
-            // idx = vec2u(spanStartIndex, id.y);
-// #endif
 var masking:u32;
 if (mask==1) {masking = spanLength + 1;} else {masking = spanLength;}
             textureStore(s_SpanLengths, idx, vec4(spanLength, 0, 0, 0));

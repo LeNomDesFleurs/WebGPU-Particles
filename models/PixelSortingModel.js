@@ -1,13 +1,37 @@
 import { RenderModel } from '../src/RenderModel.js'
+import { UniformBufferBuilder } from '../src/Buffer.js'
+import { state } from '../src/utils.js'
+import { loadImageBitmap } from '../src/utils.js'
+
+var IMAGE_URL = '../assets/rose.jpg'
 
 export class PixelSortingModel extends RenderModel {
     async loadAsset() {
+        const source = await loadImageBitmap('../assets/rose.jpg')
         await this.addTexture('texture-input', '../assets/rose.jpg')
+        var size = { width: source.width, height: source.height }
+        await this.addStorage('mask', 'r32sint', size)
+        await this.addStorage('sortvalues', 'r32float', size)
+        await this.addStorage('spanlenghts', 'r32uint', size)
+        await this.addShaderModule('sorting', '../shaders/sorting.wgsl')
     }
 
     createResources() {
+        const bufferBuilder = new UniformBufferBuilder(this.device)
+        this.uniformBuffer = bufferBuilder
+            .add({ name: 'resolution', type: 'vec2f' })
+            .add({ name: 'LowThreshold', type: 'f32' })
+            .add({ name: 'HighThreshold', type: 'f32' })
+            .add({ name: 'InvertMask', type: 'f32' })
+            .add({ name: 'SpanLimit', type: 'f32' })
+            .add({ name: 'MaskRandomOffset', type: 'f32' })
+            .add({ name: 'SortBy', type: 'f32' })
+            .add({ name: 'ReverseSorting', type: 'f32' })
+            .add({ name: 'SortedGamma', type: 'f32' })
+            .build()
+
         // --------------------------- BIND GROUP
-        const bindGroupLayout = device.createBindGroupLayout({
+        const bindGroupLayout = this.device.createBindGroupLayout({
             entries: [
                 {
                     binding: 0,
@@ -20,13 +44,6 @@ export class PixelSortingModel extends RenderModel {
                 {
                     binding: 1,
                     visibility: GPUShaderStage.COMPUTE,
-                    sampler: {
-                        type: 'non-filtering',
-                    },
-                },
-                {
-                    binding: 2,
-                    visibility: GPUShaderStage.COMPUTE,
                     texture: {
                         sampleType: 'unfilterable-float',
                         viewDimension: '2d',
@@ -34,7 +51,7 @@ export class PixelSortingModel extends RenderModel {
                     },
                 },
                 {
-                    binding: 3,
+                    binding: 2,
                     visibility: GPUShaderStage.COMPUTE,
                     storageTexture: {
                         access: 'write-only',
@@ -44,7 +61,7 @@ export class PixelSortingModel extends RenderModel {
                 },
                 //Storage
                 {
-                    binding: 4,
+                    binding: 3,
                     visibility: GPUShaderStage.COMPUTE,
                     storageTexture: {
                         access: 'read-write',
@@ -53,7 +70,7 @@ export class PixelSortingModel extends RenderModel {
                     },
                 },
                 {
-                    binding: 5,
+                    binding: 4,
                     visibility: GPUShaderStage.COMPUTE,
                     storageTexture: {
                         access: 'read-write',
@@ -62,7 +79,7 @@ export class PixelSortingModel extends RenderModel {
                     },
                 },
                 {
-                    binding: 6,
+                    binding: 5,
                     visibility: GPUShaderStage.COMPUTE,
                     storageTexture: {
                         access: 'read-write',
@@ -71,6 +88,35 @@ export class PixelSortingModel extends RenderModel {
                     },
                 },
             ],
+        })
+
+        this.layout = bindGroupLayout
+
+        this.createMaskPipeline = this.device.createRenderPipeline({
+            label: 'createMaskPipeline',
+            layout: this.pipelineLayout,
+            compute: {
+                module: this.shaderModules['sorting'],
+                entryPoint: 'CS_CreateMask',
+            },
+        })
+
+        this.identifyspanPipeline = this.device.createRenderPipeline({
+            label: 'identifyspanPipeline',
+            layout: this.pipelineLayout,
+            compute: {
+                module: this.shaderModules['sorting'],
+                entryPoint: 'CS_IdentifySpans',
+            },
+        })
+
+        this.pixelsortPipeline = this.device.createRenderPipeline({
+            label: 'pixelsortPipeline',
+            layout: this.pipelineLayout,
+            compute: {
+                module: this.shaderModules['sorting'],
+                entryPoint: 'CS_PixelSort',
+            },
         })
     }
     updateUniforms(...args) {
@@ -96,41 +142,44 @@ export class PixelSortingModel extends RenderModel {
         throw new Error('encodeRenderPass() must be implemented by subclass')
     }
     render() {
+        const canvas = document.getElementById('gfx')
+        const context = canvas.getContext('webgpu')
         const outputTexture = context.getCurrentTexture()
-        const bindGroup = device.createBindGroup({
-            label: 'tuto',
-            layout: bindGroupLayout,
+
+        const bindGroup = this.device.createBindGroup({
+            label: 'sorting buffer',
+            layout: this.layout,
             entries: [
-                { binding: 0, resource: { buffer: uniformBuffer } },
-                { binding: 1, resource: sampler },
-                { binding: 2, resource: inputTexture.createView() },
-                { binding: 3, resource: outputTexture.createView() },
-                { binding: 4, resource: storageMask.createView() },
-                { binding: 5, resource: storageSortValue.createView() },
-                { binding: 6, resource: storageSpanLenght.createView() },
+                {
+                    binding: 0,
+                    resource: { buffer: this.uniformBuffer.getBufferObject() },
+                },
+                {
+                    binding: 1,
+                    resource: this.textures['texture-input'].createView(),
+                },
+                { binding: 2, resource: outputTexture.createView() },
+                { binding: 3, resource: this.textures['mask'].createView() },
+                {
+                    binding: 4,
+                    resource: this.textures['sortvalues'].createView(),
+                },
+                {
+                    binding: 5,
+                    resource: this.textures['spanlenghts'].createView(),
+                },
             ],
         })
 
-        _LowThresholdValue.set([min])
-        _HighThresholdValue.set([max])
-        _InvertMaskValue.set([0])
-        _MaskRandomOffsetValue.set([0.0])
-        _AnimationSpeedValue.set([0.0])
-        // max 1000, else, got to change the cache size in the shader
-        _SpanLimitValue.set([1000])
-        _MaxRandomOffsetValue.set([1])
-        _SortByValue.set([0])
-        _ReverseSortingValue.set([0])
-        _SortedGammaValue.set([1.0])
-        _FrameTimeValue.set([0.0])
-        BUFFER_WIDTHValue.set([canvas.width])
-        BUFFER_HEIGHTValue.set([canvas.height])
+        const encoder = this.device.createCommandEncoder({ label: 'sorting' })
 
-        const encoder = device.createCommandEncoder({ label: 'tuto' })
-        device.queue.writeBuffer(uniformBuffer, 0, uniformValues)
-        device.queue.copyExternalImageToTexture(
+        const source = createImageBitmap('IMAGE_URL', {
+            colorSpaceConversion: 'none',
+        })
+
+        this.device.queue.copyExternalImageToTexture(
             { source: source },
-            { texture: inputTexture },
+            { texture: this.textures['texture-input'] },
             { width: source.width, height: source.height }
         )
 
@@ -142,24 +191,128 @@ export class PixelSortingModel extends RenderModel {
         let height = this.textures['texture-input'].height
 
         pass.setBindGroup(0, bindGroup)
-        pass.setPipeline(createMaskPipeline)
+        pass.setPipeline(this.createMaskPipeline)
         pass.dispatchWorkgroups(width / 8, height / 8)
         // pass.setPipeline(createsortvaluePipeline)
         // pass.dispatchWorkgroups(width / 8, height / 8);
         // pass.setPipeline(clearbufferPipeline)
         // pass.dispatchWorkgroups(width / 8, height / 8);
-        pass.setPipeline(identifyspanPipeline)
+        pass.setPipeline(this.identifyspanPipeline)
         pass.dispatchWorkgroups(width / 8, height / 8)
         // pass.setPipeline(visualizePipeline)
         // pass.dispatchWorkgroups(width, height);
-        pass.setPipeline(pixelsortPipeline)
+        pass.setPipeline(this.pixelsortPipeline)
         pass.dispatchWorkgroups(width / 8, height / 8)
         // pass.setPipeline(compositePipeline)
         // pass.dispatchWorkgroups(width / 8, height / 8);
         pass.end()
 
         const commandBuffer = encoder.finish()
-        device.queue.submit([commandBuffer])
+        this.device.queue.submit([commandBuffer])
+    }
+
+    updateUniforms(...args) {
+        const canvasSize = this.renderCtx.getCanvasSize()
+        this.uniformBuffer.set('resolution', canvasSize)
+        this.uniformBuffer.set('LowThreshold', state.LowThreshold)
+        this.uniformBuffer.set('HighThreshold', state.HighThreshold)
+        this.uniformBuffer.set('InvertMask', state.InvertMask)
+        this.uniformBuffer.set('SpanLimit', state.SpanLimit)
+        this.uniformBuffer.set('MaskRandomOffset', state.MaskRandomOffset)
+        this.uniformBuffer.set('SortBy', state.SortBy)
+        this.uniformBuffer.set('ReverseSorting', state.ReverseSorting)
+        this.uniformBuffer.set('SortedGamma', state.SortedGamma)
+        this.device.queue.writeBuffer(
+            this.uniformBuffer.getBufferObject(),
+            0,
+            this.uniformBuffer.getBuffer()
+        )
+    }
+
+    addControls() {
+        super.addControls()
+        const controls = [
+            {
+                type: 'range',
+                id: 'LowThreshold',
+                label: 'LowThreshold',
+                min: 0,
+                max: 255,
+                value: 2,
+                step: 1,
+                handler: (v) => (state.LowThreshold = v / 255.0),
+            },
+            {
+                type: 'range',
+                id: 'HighThreshold',
+                label: 'HighThreshold',
+                min: 0,
+                max: 255,
+                value: 255,
+                step: 1,
+                handler: (v) => (state.HighThreshold = v / 255.0),
+            },
+            {
+                type: 'range',
+                id: 'InvertMask',
+                label: 'InvertMask',
+                min: 0,
+                max: 255,
+                value: 255,
+                step: 1,
+                handler: (v) => (state.InvertMask = v / 255.0),
+            },
+            {
+                type: 'range',
+                id: 'InvertMask',
+                label: 'InvertMask',
+                min: 1,
+                max: 2000,
+                value: 500,
+                step: 1,
+                handler: (v) => (state.InvertMask = v),
+            },
+            {
+                type: 'range',
+                name: 'MaskRandomOffset',
+                label: 'MaskRandomOffset',
+                min: 0,
+                max: 255,
+                value: 255,
+                step: 1,
+                handler: (v) => (state.MaskRandomOffset = v / 255.0),
+            },
+            {
+                type: 'radio',
+                name: 'SortBy',
+                label: 'SortBy',
+                option: [0, 1, 2],
+                default: 0,
+                handler: (v) => (state.SortBy = v),
+            },
+            {
+                type: 'range',
+                name: 'ReverseSorting',
+                label: 'ReverseSorting',
+                min: 0,
+                max: 255,
+                value: 255,
+                step: 1,
+                handler: (v) => (state.ReverseSorting = v / 255.0),
+            },
+            {
+                type: 'range',
+                name: 'SortedGamma',
+                label: 'SortedGamma',
+                min: 0,
+                max: 255,
+                value: 255,
+                step: 1,
+                handler: (v) => (state.SortedGamma = v / 255.0),
+            },
+        ]
+
+        this.addControllers(controls)
     }
 
     async init() {

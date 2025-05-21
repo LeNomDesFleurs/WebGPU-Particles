@@ -128,6 +128,20 @@ export class RenderModel {
         await this.addTexture(name, bitmap, (format = 'rgba8unorm'))
     }
 
+    async addStorage(name, format = "r32float", size) { 
+        const texture = this.device.createTexture({
+            label: name,
+            format,
+            size: [size.width, size.height],
+            usage:
+                GPUTextureUsage.STORAGE_BINDING |
+                GPUTextureUsage.COPY_DST,
+        })
+        this.textures[name] = texture
+        return texture
+
+    }
+
     async addTexture(name, blob, format = 'rgba8unorm') {
         const source = await loadImageBitmap(blob)
         const texture = this.device.createTexture({

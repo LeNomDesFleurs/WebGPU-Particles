@@ -10,22 +10,22 @@ async function init() {
         renderContext.getDevice(),
         renderContext
     )
-    const modelDCT = new ComputeDCTModel(renderContext.getDevice(), renderContext)
+    // const modelDCT = new ComputeDCTModel(renderContext.getDevice(), renderContext)
 
     // await modelDCT.init();
     // modelDCT.render();
 
-    await modelDithering.init()
-    modelDithering.render()
+    // await modelDithering.init()
+    // modelDithering.render()
 
     // const renderContext = await getRendererContextInstance();
-    // const pixelSortingModel = new PixelSortingModel(renderContext.getDevice(), renderContext);
+    const pixelSortingModel = new PixelSortingModel(renderContext.getDevice(), renderContext);
 
     // await modelDithering.init();
     // modelDithering.render();
 
-    // await modelSorting.init();
-    // modelSorting.render();
+    await pixelSortingModel.init();
+    pixelSortingModel.render();
 
 
     document.getElementById('download').addEventListener('click', function (e) {
