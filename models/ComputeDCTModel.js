@@ -3,12 +3,11 @@ import { UniformBufferBuilder } from '../src/Buffer.js'
 
 export class ComputeDCTModel extends RenderModel {
     constructor(device, renderCtx) {
-        super(device)
-        this.renderCtx = renderCtx
+        super(device, renderCtx)
     }
 
     async loadAsset() {
-        await this.addTexture('main-rose', './assets/rose.jpg')
+        await this.addTexture('texture-input', './assets/rose.jpg')
         await this.addShaderModule('dct1', './shaders/DCTcompute.wgsl')
     }
 
@@ -25,7 +24,7 @@ export class ComputeDCTModel extends RenderModel {
         this.textureOut1 = this.device.createTexture({
             label: 'texture-out1',
             format: 'rgba8unorm',
-            size: [1000, 1000],
+            size: [this.textures['texture-input'].width, this.textures['texture-input'].height],
             usage:
                 GPUTextureUsage.TEXTURE_BINDING |
                 // GPUTextureUsage.RENDER_ATTACHMENT |
@@ -85,7 +84,7 @@ export class ComputeDCTModel extends RenderModel {
                 },
                 {
                     binding: 1,
-                    resource: this.textures['main-rose'].createView(),
+                    resource: this.textures['texture-input'].createView(),
                 },
                 {
                     binding: 2,
@@ -107,6 +106,7 @@ export class ComputeDCTModel extends RenderModel {
     async init() {
         await this.loadAsset()
         await this.createResources()
+        this.addControls();
     }
 
     updateUniforms(freq = 8) {
@@ -131,12 +131,9 @@ export class ComputeDCTModel extends RenderModel {
 
         const pass = encoder.beginComputePass()
 
-        let width = 1000
-        let height = 1000
-
         pass.setBindGroup(0, this.bindGroup1)
         pass.setPipeline(this.pipeline1)
-        pass.dispatchWorkgroups(width / nb_freq, height / nb_freq)
+        pass.dispatchWorkgroups(this.textures['texture-input'].width / nb_freq, this.textures['texture-input'].height / nb_freq)
         pass.end()
 
         const commandBuffer = encoder.finish()

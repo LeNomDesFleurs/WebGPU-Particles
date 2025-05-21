@@ -36,4 +36,10 @@ class RenderContext {
     getDevice() { return this._device; }
     getFormat() { return this._format; }
     getCanvasSize() { return [this._canvas.width, this._canvas.height] }
+
+    setCanvasSize(newWidth, newHeight) {
+        const ratio = newHeight / newWidth; 
+        console.log(ratio)
+        this._canvas.height = 1000 * ratio; // on va changer ca aussi 1000
+    }
 }

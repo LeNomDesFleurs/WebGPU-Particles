@@ -10,7 +10,7 @@ async function init() {
         renderContext.getDevice(),
         renderContext
     )
-    // const modelDCT = new DCTModel(renderContext.getDevice(), renderContext)
+    const modelDCT = new ComputeDCTModel(renderContext.getDevice(), renderContext)
 
     // await modelDCT.init();
     // modelDCT.render();
@@ -27,18 +27,6 @@ async function init() {
     // await modelSorting.init();
     // modelSorting.render();
 
-    document
-        .getElementById('image_input')
-        .addEventListener('change', async (event) => {
-            const file = event.target.files[0]
-            // create a temp. image object
-            var test = await createImageBitmap(file, {
-                colorSpaceConversion: 'none',
-            })
-
-            await modelDithering.update_image(test)
-            modelDithering.render()
-        })
 
     document.getElementById('download').addEventListener('click', function (e) {
         let canvas = document.getElementById('gfx')

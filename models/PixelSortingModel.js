@@ -2,7 +2,7 @@ import { RenderModel } from '../src/RenderModel.js'
 
 export class PixelSortingModel extends RenderModel {
     async loadAsset() {
-        await this.addTexture('main-rose', '../assets/rose.jpg')
+        await this.addTexture('texture-input', '../assets/rose.jpg')
     }
 
     createResources() {
@@ -137,9 +137,9 @@ export class PixelSortingModel extends RenderModel {
         const pass = encoder.beginComputePass()
 
         // let width = canvas.width;
-        let width = 1000
+        let width = this.textures['texture-input'].width
         // let height = canvas.height;
-        let height = 1000
+        let height = this.textures['texture-input'].height
 
         pass.setBindGroup(0, bindGroup)
         pass.setPipeline(createMaskPipeline)

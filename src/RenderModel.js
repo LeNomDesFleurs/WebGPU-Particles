@@ -1,7 +1,9 @@
+import { getRendererContextInstance } from './RenderContext.js'
 import { loadImageBitmap, loadWGSL } from './utils.js'
 
 export class RenderModel {
-    constructor(device) {
+    constructor(device, renderCtx) {
+        this.renderCtx = renderCtx;
         this.device = device
         this.queue = []
         this.shaderModules = new Map()
@@ -12,6 +14,11 @@ export class RenderModel {
     async loadAsset() {
         throw new Error('loadAssets() must be implemented by subclass')
     }
+    async updateImage(file) {
+        await this.replaceTexture('texture-input', file)
+        await this.createResources()
+    }
+    
     createResources() {
         throw new Error('createResources() must be implemented by subclass')
     }
@@ -23,7 +30,27 @@ export class RenderModel {
         throw new Error('render() must be implemented by subclass')
     }
     addControls() {
-        throw new Error('addControls() must be implemented by subclass')
+        // <label>PNG file: <input type="file" id="image_input" accept="image/png" id="load-image"></label>
+        const container = document.getElementById("controller");
+        const fileLabel = document.createElement("label");
+        console.log(container)
+        fileLabel.textContent = "PNG file: "
+        const input = document.createElement("input")
+        input.type = "file"
+        input.accept = "image/png, image/jpg"
+        input.addEventListener('change', async (event) => {
+                const file = event.target.files[0]
+                // create a temp. image object
+                const data = await createImageBitmap(file, {
+                    colorSpaceConversion: 'none',
+                })
+
+                await this.updateImage(data)
+                this.render()
+            })
+        fileLabel.appendChild(input);
+        container.appendChild(fileLabel);
+        // throw new Error('addControls() must be implemented by subclass')
     }
 
     addControllers(controls = []) {
@@ -97,6 +124,7 @@ export class RenderModel {
         if (oldTexture && typeof oldTexture.destroy === 'function') {
             oldTexture.destroy()
         }
+        console.log(this)
         await this.addTexture(name, bitmap, (format = 'rgba8unorm'))
     }
 
@@ -117,6 +145,7 @@ export class RenderModel {
             { texture },
             { width: source.width, height: source.height }
         )
+        this.renderCtx.setCanvasSize(source.width, source.height);
 
         return texture
     }

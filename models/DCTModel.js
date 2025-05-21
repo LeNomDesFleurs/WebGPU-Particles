@@ -3,12 +3,11 @@ import { UniformBufferBuilder } from '../src/Buffer.js'
 
 export class DCTModel extends RenderModel {
     constructor(device, renderCtx) {
-        super(device)
-        this.renderCtx = renderCtx
+        super(device, renderCtx)
     }
 
     async loadAsset() {
-        await this.addTexture('main-rose', '../assets/rose.jpg')
+        await this.addTexture('texture-input', '../assets/rose.jpg')
         await this.addShaderModule('dct1', '../shaders/DCT1.wgsl')
         await this.addShaderModule('dct2', '../shaders/DCT2.wgsl')
         await this.addShaderModule('dct3', '../shaders/DCT3.wgsl')
@@ -93,7 +92,7 @@ export class DCTModel extends RenderModel {
                 { binding: 1, resource: this.renderCtx.getSampler() },
                 {
                     binding: 2,
-                    resource: this.textures['main-rose'].createView(),
+                    resource: this.textures['texture-input'].createView(),
                 },
                 { binding: 3, resource: this.textureOut1.createView() },
             ],

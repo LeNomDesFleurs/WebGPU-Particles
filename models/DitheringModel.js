@@ -7,18 +7,12 @@ let DITHERING_SHADER_PATH = './shaders/dithering.wgsl'
 
 export class DitheringModel extends RenderModel {
     constructor(device, renderCtx) {
-        super(device)
-        this.renderCtx = renderCtx
+        super(device, renderCtx)
     }
 
     async loadAsset() {
-        await this.addTexture('input', IMAGE_URL)
+        await this.addTexture('texture-input', IMAGE_URL)
         await this.addShaderModule('dithering', DITHERING_SHADER_PATH)
-    }
-
-    async update_image(file) {
-        await this.replaceTexture('input', file)
-        await this.createResources()
     }
 
     createResources() {
@@ -70,7 +64,7 @@ export class DitheringModel extends RenderModel {
                     resource: { buffer: this.uniformBuffer.getBufferObject() },
                 },
                 { binding: 1, resource: this.renderCtx.getSampler() },
-                { binding: 2, resource: this.textures['input'].createView() },
+                { binding: 2, resource: this.textures['texture-input'].createView() },
             ],
         })
 
@@ -99,6 +93,7 @@ export class DitheringModel extends RenderModel {
     }
 
     addControls() {
+        super.addControls();
         const controls = [
             {
                 type: 'range',
