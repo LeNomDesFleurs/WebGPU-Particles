@@ -11,7 +11,7 @@ Experimenting with particle systems in web-GPU
 - [ ] Dithering - add uniform (resolution, color number)
 - [ ] Uniform - Pass resolution of the context to the shader (stuff hardcoded for now in the dithering of the fragment)
 - [ ] Input Vertex as a proper [vertex buffer](https://webgpufundamentals.org/webgpu/lessons/webgpu-vertex-buffers.html)
-- [ ] Dithering - add pixelisation
+- [ ] Dithering - Resolution modification
 - [ ] Shader - Split shader in dedicated file
 - [ ] UI - Parameter Tab w/ sliders to input data
 - [ ] Input - Display Image from internal path
@@ -28,6 +28,10 @@ Experimenting with particle systems in web-GPU
 - [ ] Crystal - create a symmetry group
 - [ ] Crystal - simulate Growth
 
+
+## To-Do
+
+- [ ] 
 
 
 ## References
