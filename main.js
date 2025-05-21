@@ -1,11 +1,8 @@
-import { DCTModel } from './models/DCTModel.js';
+import { ComputeDCTModel } from './models/ComputeDCTModel.js';
 import { DitheringModel } from './models/DitheringModel.js';
 import { PixelSortingModel } from './models/PixelSortingModel.js';
 import { getRendererContextInstance } from './RenderContext.js';
 import { state } from './utils.js';
-
-
-
 
 async function init() {
 
