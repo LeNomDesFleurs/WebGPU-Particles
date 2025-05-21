@@ -113,7 +113,7 @@ export class RenderModel {
         })
         this.textures[name] = texture
         this.device.queue.copyExternalImageToTexture(
-            { source, flipY: true },
+            { source},
             { texture },
             { width: source.width, height: source.height }
         )
