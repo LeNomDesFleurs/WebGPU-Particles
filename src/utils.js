@@ -1,7 +1,8 @@
 export const state = {
 	colNb: 2.0,
 	ditherStrength: 1.0,
-	bayerFilterSize: 8.0
+	bayerFilterSize: 8.0,
+	pixelate: 1.0,
 }
 
 export const CANVAS_ID = 'gfx';

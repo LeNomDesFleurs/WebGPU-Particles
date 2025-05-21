@@ -1,4 +1,9 @@
-
+// This Shader simulate the compression happening when using Jpeg codec
+// --------------------------------
+// Stuff to tweak
+// - Adding HSL conversion before and after, or only before / only after
+// - Having a different number of frequences for the DCT and iDCT
+// - Number of levels
 
 struct Uniforms {
     resolution: vec2f,
@@ -15,20 +20,13 @@ const PI:f32= 3.1415972;
 const SQRT2:f32= 0.70710678118;
 
 const NB_LEVELS:f32= 3.;
-//#define NB_LEVELS (1.+5.*fragCoord.x/iResolution.x)
-//#define NB_LEVELS (1.+7.*iMouse.x/iResolution.x)
-//#define NB_LEVELS floor(1.+7.*iMouse.x/iResolution.x)
-//#define NB_LEVELS (1.+5.*(.5+.5*sin(iTime)))
-
-// You may change the number of frequencies used for the reconstruction for achieving different effects.
-//#define NB_FREQ		int(mod(iTime, 7.)+1.)
+const NB_FREQ:i32= 8;
 
 fn DCTcoeff(k:vec2f, x:vec2f)->f32
 {
     return cos(PI*k.x*x.x)*cos(PI*k.y*x.y);
 }
 
-const NB_FREQ:i32= 8;
 var<workgroup> cache1: array<array<vec3f, NB_FREQ>, NB_FREQ>;
 var<workgroup> cache2: array<array<vec3f, NB_FREQ>, NB_FREQ>;
 

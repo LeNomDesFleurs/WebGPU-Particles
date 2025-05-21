@@ -2,7 +2,9 @@ struct Uniforms {
     resolution: vec2f,
     colorNb: f32,
     dith_strength: f32,
-    bayer_filter_size: f32
+    bayer_filter_size: f32,
+    // [0; 1]
+    pixelate: f32,
 };
 
 struct OurVertexShaderOutput {
@@ -63,10 +65,13 @@ const BAYER_FILTER_8 = array(
 );
 
 // Getting the specific pattern from the grid
-fn getBayer(uvScreenSpace: vec2f) ->f32 {
+fn getBayer(uvScreenSpace: vec2f, pix:f32) ->f32 {
     let BAYER_SIZE = 8.0;
 
-    var uv = uvScreenSpace * uniforms.resolution % uniforms.bayer_filter_size;
+
+    // replace top line by bottom line and change the pixelate parameter to glitch the matrix
+    var uv = uvScreenSpace * pix % uniforms.bayer_filter_size;
+    // var uv = uvScreenSpace * uniforms.resolution % uniforms.bayer_filter_size;
 
     // let uv = modf(uvScreenSpace.xy, vec2f(BAYER_SIZE));
     let index = i32(uv.y * uniforms.bayer_filter_size + uv.x);
@@ -86,14 +91,17 @@ fn quantize(channel: f32, period: f32) -> f32 {
 
 @fragment
 fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
-    let fragCoord = fsInput.texcoord;
+
+    var pix :f32 = uniforms.resolution.y * uniforms.pixelate;
+    // var pix:f32 = 500;
+
+    let fragCoord = floor(fsInput.texcoord * pix)/pix;
+
     let period = vec3(1.0 / (f32(uniforms.colorNb) - 1.0));
 
-    var output = textureSample(ourTexture, ourSampler, fsInput.texcoord).rgb;
-    output += (getBayer(fragCoord) - 0.5) * period * uniforms.dith_strength;
-    output = vec3f(quantize(output.r, period.r),
-    quantize(output.g, period.g),
-    quantize(output.b, period.b));
+    var output = textureSample(ourTexture, ourSampler, fragCoord).rgb;
+    output += (getBayer(fragCoord, pix) - 0.5) * period * uniforms.dith_strength;
+    output = vec3f(quantize(output.r, period.r), quantize(output.g, period.g), quantize(output.b, period.b));
 
     return vec4f(output, 1.0);
 }

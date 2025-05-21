@@ -22,6 +22,7 @@ export class DitheringModel extends RenderModel {
             .add({ name: 'col-nb', type: 'f32' })
             .add({ name: 'dith-str', type: 'f32' })
             .add({ name: 'bayer_filter_size', type: 'f32' })
+            .add({ name: 'pixelate', type: 'f32' })
             .build()
 
         const bindGroupLayout = this.device.createBindGroupLayout({
@@ -64,7 +65,10 @@ export class DitheringModel extends RenderModel {
                     resource: { buffer: this.uniformBuffer.getBufferObject() },
                 },
                 { binding: 1, resource: this.renderCtx.getSampler() },
-                { binding: 2, resource: this.textures['texture-input'].createView() },
+                {
+                    binding: 2,
+                    resource: this.textures['texture-input'].createView(),
+                },
             ],
         })
 
@@ -83,6 +87,7 @@ export class DitheringModel extends RenderModel {
         const canvasSize = this.renderCtx.getCanvasSize()
         this.uniformBuffer.set('resolution', canvasSize)
         this.uniformBuffer.set('col-nb', state.colNb)
+        this.uniformBuffer.set('pixelate', state.pixelate)
         this.uniformBuffer.set('dith-str', state.ditherStrength)
         this.uniformBuffer.set('bayer_filter_size', state.bayerFilterSize)
         this.device.queue.writeBuffer(
@@ -93,7 +98,7 @@ export class DitheringModel extends RenderModel {
     }
 
     addControls() {
-        super.addControls();
+        super.addControls()
         const controls = [
             {
                 type: 'range',
@@ -116,6 +121,16 @@ export class DitheringModel extends RenderModel {
                 handler: (v) => (state.ditherStrength = v / 255.0),
             },
             {
+                type: 'range',
+                id: 'pixelate',
+                label: 'pixelate',
+                min: 0,
+                max: 1000,
+                value: 1000,
+                step: 1,
+                handler: (v) => (state.pixelate = v / 1000.0),
+            },
+            {
                 type: 'radio',
                 name: 'bayer-size',
                 label: 'bayer size',
@@ -126,6 +141,7 @@ export class DitheringModel extends RenderModel {
         ]
 
         this.addControllers(controls)
+
     }
 
     async init() {
