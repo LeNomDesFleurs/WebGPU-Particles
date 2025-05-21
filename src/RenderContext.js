@@ -16,7 +16,6 @@ export async function getRendererContextInstance() {
     context.configure({ device, format });
 
     renderContextInstance = new RenderContext(device, canvas, context, format);
-    // await renderContextInstance.init();
     return renderContextInstance;
 }
 
@@ -26,9 +25,7 @@ class RenderContext {
         this._canvas = canvas;
         this._context = context;
         this._format = format;
-
         this._sampler = this._device.createSampler();
-
     }
 
     getView() { return this._context.getCurrentTexture().createView(); }
@@ -39,7 +36,6 @@ class RenderContext {
 
     setCanvasSize(newWidth, newHeight) {
         const ratio = newHeight / newWidth; 
-        console.log(ratio)
         this._canvas.height = 1000 * ratio; // on va changer ca aussi 1000
     }
 }

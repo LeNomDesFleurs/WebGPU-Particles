@@ -33,11 +33,20 @@
             flex-direction: column;
             padding: 2rem;
         }
+
+        #models-container {
+            position: absolute;
+            top: 0;
+            width: 500px;
+            height: 100px;
+            display: flex;
+            background-color: red;
+        }
     </style>
 </head>
 <body>
+    <div id="models-container"></div>
     <canvas id="gfx" width="1000", height="1000"></canvas>
-
     <!-- <button>Settings</button> -->
     <div id="controller">
         <button id="download">Download Canvas</button>        

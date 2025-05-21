@@ -4,40 +4,53 @@ import { PixelSortingModel } from './models/PixelSortingModel.js'
 import { getRendererContextInstance } from './src/RenderContext.js'
 import { state } from './src/utils.js'
 
-async function init() {
-    const renderContext = await getRendererContextInstance()
-    const modelDithering = new DitheringModel(
+const MODELS = [ComputeDCTModel, DitheringModel, PixelSortingModel];
+let CURRENT_MODEL;
+
+async function init(renderContext) {
+    CURRENT_MODEL = new ComputeDCTModel(
         renderContext.getDevice(),
         renderContext
     )
-    // const modelDCT = new ComputeDCTModel(renderContext.getDevice(), renderContext)
+    await CURRENT_MODEL.init()
+    CURRENT_MODEL.render()
+}
 
-    // await modelDCT.init();
-    // modelDCT.render();
+document.addEventListener('DOMContentLoaded', async () => {
+    const renderContext = await getRendererContextInstance()
+    
+    init(renderContext)
 
-    // await modelDithering.init()
-    // modelDithering.render()
+    const modelsContainer = document.getElementById('models-container');
+    MODELS.forEach((model) => {
+        const button = document.createElement('button')
+        button.textContent = model.name;
+        button.style.backgroundColor = 'blue';
+        button.style.width = '5rem'
+        button.addEventListener('click', async () => {
+            // if (CURRENT_MODEL.name == model.name) { plus tard -> disable if already clicked
+            //     button.style.backgroundColor = 'green';
+            //     button.disabled = true;
+            // }
+            CURRENT_MODEL.destroy();
 
-    // const renderContext = await getRendererContextInstance();
-    const pixelSortingModel = new PixelSortingModel(renderContext.getDevice(), renderContext);
-
-    // await modelDithering.init();
-    // modelDithering.render();
-
-    await pixelSortingModel.init();
-    pixelSortingModel.render();
-
+            CURRENT_MODEL = new model(renderContext.getDevice(), renderContext);
+            await CURRENT_MODEL.init();
+            CURRENT_MODEL.render();
+        })
+        modelsContainer.appendChild(button);
+    });
 
     document.getElementById('download').addEventListener('click', function (e) {
         let canvas = document.getElementById('gfx')
         let canvasUrl = canvas.toDataURL('image/jpeg', 0.5)
-        console.log(canvasUrl)
         const createEl = document.createElement('a')
         createEl.href = canvasUrl
         createEl.download = 'download-this-canvas'
         createEl.click()
         createEl.remove()
     })
-}
 
-init()
+});
+
+

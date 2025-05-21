@@ -27,7 +27,7 @@ export class ComputeDCTModel extends RenderModel {
             size: [this.textures['texture-input'].width, this.textures['texture-input'].height],
             usage:
                 GPUTextureUsage.TEXTURE_BINDING |
-                // GPUTextureUsage.RENDER_ATTACHMENT |
+                GPUTextureUsage.RENDER_ATTACHMENT |
                 GPUTextureUsage.STORAGE_BINDING,
         })
 
