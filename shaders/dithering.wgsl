@@ -65,7 +65,7 @@ const BAYER_FILTER_8 = array(
 );
 
 // Getting the specific pattern from the grid
-fn getBayer(uvScreenSpace: vec2f, pix:f32) ->f32 {
+fn getBayer(uvScreenSpace: vec2f, pix:vec2f) ->f32 {
     let BAYER_SIZE = 8.0;
 
 
@@ -92,7 +92,7 @@ fn quantize(channel: f32, period: f32) -> f32 {
 @fragment
 fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
 
-    var pix :f32 = uniforms.resolution.y * uniforms.pixelate;
+    var pix :vec2f = uniforms.resolution * uniforms.pixelate;
     // var pix:f32 = 500;
 
     let fragCoord = floor(fsInput.texcoord * pix)/pix;
