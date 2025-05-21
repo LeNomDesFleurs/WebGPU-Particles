@@ -5,16 +5,16 @@ Experimenting with particle systems in web-GPU
 
 - [x] WebGPU - floating Triangle
 - [x] WebGPU - Sample Texture
-- [ ] Change canvas size dynamicly to fit input image
+- [x] Change canvas size dynamicly to fit input image
 - [x] Dithering shader
-- [ ] Dithering - Clean up shader
-- [ ] Dithering - add uniform (resolution, color number)
-- [ ] Uniform - Pass resolution of the context to the shader (stuff hardcoded for now in the dithering of the fragment)
+- [x] Dithering - Clean up shader
+- [x] Dithering - add uniform (resolution, color number)
+- [x] Uniform - Pass resolution of the context to the shader (stuff hardcoded for now in the dithering of the fragment)
 - [ ] Input Vertex as a proper [vertex buffer](https://webgpufundamentals.org/webgpu/lessons/webgpu-vertex-buffers.html)
-- [ ] Dithering - Resolution modification
-- [ ] Shader - Split shader in dedicated file
-- [ ] UI - Parameter Tab w/ sliders to input data
-- [ ] Input - Display Image from internal path
+- [x] Dithering - Resolution modification
+- [x] Shader - Split shader in dedicated file
+- [x] UI - Parameter Tab w/ sliders to input data
+- [x] Input - Display Image from internal path
 - [ ] Particles - Particle system sampling input image
 - [ ] UI - adding parameters to modify particle behaviour
 - [ ] UI - Input image on drag and drop
@@ -31,7 +31,11 @@ Experimenting with particle systems in web-GPU
 
 ## To-Do
 
-- [ ] 
+- [ ] selection de mode
+- [ ] Uniform generator
+- [ ] keyboard shortcut interaction
+- [ ] shader preprocessor (include)
+- [ ] chain shaders
 
 
 ## References
