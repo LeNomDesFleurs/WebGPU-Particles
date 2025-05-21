@@ -77,6 +77,7 @@ export class DitheringModel extends RenderModel {
                 targets: [{ format: this.renderCtx.getFormat() }],
             },
         })
+        console.log('pipeline format:', this.renderCtx.getFormat());
     }
 
     updateUniforms(...args) {
@@ -139,6 +140,7 @@ export class DitheringModel extends RenderModel {
         this.updateUniforms()
 
         const pass = encoder.beginRenderPass({
+            label: 'nique',
             colorAttachments: [
                 {
                     view: this.renderCtx.getView(),
@@ -152,6 +154,7 @@ export class DitheringModel extends RenderModel {
         pass.setBindGroup(0, this.bindGroup)
         pass.draw(6)
         pass.end()
+        console.log('view format:', this.renderCtx.getFormat());
 
         const commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])

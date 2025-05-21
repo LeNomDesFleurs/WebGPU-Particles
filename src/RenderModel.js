@@ -149,4 +149,19 @@ export class RenderModel {
 
         return texture
     }
+
+    destroy() {
+        // Destroy texture
+        this.textures.forEach((texture) => {
+            texture.destroy();
+        })
+
+        // Destroy controller
+        const controllers = document.getElementById('controller');
+        controllers.innerHTML = "";
+
+        // this.device.queue
+
+
+    }
 }
