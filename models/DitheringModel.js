@@ -1,70 +1,74 @@
-import { UniformBufferBuilder } from "../Buffer.js";
-import { RenderModel } from "../RenderModel.js";
-import { state } from "../utils.js";
+import { UniformBufferBuilder } from '../src/Buffer.js'
+import { RenderModel } from '../src/RenderModel.js'
+import { state } from '../src/utils.js'
 
-var IMAGE_URL = './rose.png'
-let DITHERING_SHADER_PATH = "./shaders/dithering.wgsl"
+var IMAGE_URL = '../assets/rose.jpg'
+let DITHERING_SHADER_PATH = './shaders/dithering.wgsl'
 
 export class DitheringModel extends RenderModel {
     constructor(device, renderCtx) {
-        super(device);
-        this.renderCtx = renderCtx;
+        super(device)
+        this.renderCtx = renderCtx
     }
 
     async loadAsset() {
-        await this.addTexture('input', IMAGE_URL);
-        await this.addShaderModule('dithering', DITHERING_SHADER_PATH);
+        await this.addTexture('input', IMAGE_URL)
+        await this.addShaderModule('dithering', DITHERING_SHADER_PATH)
     }
 
-    async update_image(file) { 
-        await this.replaceTexture('input', file);
-        await this.createResources();
+    async update_image(file) {
+        await this.replaceTexture('input', file)
+        await this.createResources()
     }
 
     createResources() {
-        const bufferBuilder = new UniformBufferBuilder(this.device);
+        const bufferBuilder = new UniformBufferBuilder(this.device)
         this.uniformBuffer = bufferBuilder
-                                        .add({ name: 'resolution', type: 'vec2' })
-                                        .add({ name: 'col-nb', type: 'f32'})
-                                        .add({ name: 'dith-str', type: 'f32' })
-                                        .add({ name: 'bayer_filter_size', type: 'f32' })
-                                        .build();
-
+            .add({ name: 'resolution', type: 'vec2' })
+            .add({ name: 'col-nb', type: 'f32' })
+            .add({ name: 'dith-str', type: 'f32' })
+            .add({ name: 'bayer_filter_size', type: 'f32' })
+            .build()
 
         const bindGroupLayout = this.device.createBindGroupLayout({
-            entries: [{
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: {
-                    type: 'uniform', 
-                    hasDynamicOffset: false,
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                    buffer: {
+                        type: 'uniform',
+                        hasDynamicOffset: false,
+                    },
                 },
-            },
-            {
-                binding: 1,
-                visibility: GPUShaderStage.FRAGMENT,
-                sampler: { type: 'non-filtering' }
-            },
-            {
-                binding: 2,
-                visibility: GPUShaderStage.FRAGMENT,
-                texture: {
-                    sampleType: 'unfilterable-float',
-                    viewDimension: '2d',
-                    multisampled: false,
-                }
-            }]
-        });
-        
+                {
+                    binding: 1,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    sampler: { type: 'non-filtering' },
+                },
+                {
+                    binding: 2,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {
+                        sampleType: 'unfilterable-float',
+                        viewDimension: '2d',
+                        multisampled: false,
+                    },
+                },
+            ],
+        })
+
         const pipelineLayout = this.device.createPipelineLayout({
-            bindGroupLayouts: [ bindGroupLayout ],
-        });
+            bindGroupLayouts: [bindGroupLayout],
+        })
 
         this.bindGroup = this.device.createBindGroup({
             label: 'dithering-bindgroup',
             layout: bindGroupLayout,
             entries: [
-                { binding: 0, resource: { buffer: this.uniformBuffer.getBufferObject(),} },
+                {
+                    binding: 0,
+                    resource: { buffer: this.uniformBuffer.getBufferObject() },
+                },
                 { binding: 1, resource: this.renderCtx.getSampler() },
                 { binding: 2, resource: this.textures['input'].createView() },
             ],
@@ -76,76 +80,104 @@ export class DitheringModel extends RenderModel {
             vertex: { module: this.shaderModules['dithering'] },
             fragment: {
                 module: this.shaderModules['dithering'],
-                targets: [{ format : this.renderCtx.getFormat() }],
+                targets: [{ format: this.renderCtx.getFormat() }],
             },
         })
     }
 
     updateUniforms(...args) {
-        const canvasSize = this.renderCtx.getCanvasSize();
-        this.uniformBuffer.set('resolution', canvasSize);
-        this.uniformBuffer.set('col-nb', state.colNb);
-        this.uniformBuffer.set('dith-str', state.ditherStrength);
+        const canvasSize = this.renderCtx.getCanvasSize()
+        this.uniformBuffer.set('resolution', canvasSize)
+        this.uniformBuffer.set('col-nb', state.colNb)
+        this.uniformBuffer.set('dith-str', state.ditherStrength)
         this.uniformBuffer.set('bayer_filter_size', state.bayerFilterSize)
-        this.device.queue.writeBuffer(this.uniformBuffer.getBufferObject(), 0, this.uniformBuffer.getBuffer());
+        this.device.queue.writeBuffer(
+            this.uniformBuffer.getBufferObject(),
+            0,
+            this.uniformBuffer.getBuffer()
+        )
     }
 
     addControls() {
         const controls = [
-            { type: 'range', id: 'col-nb', label: 'color nb', min: 2, max: 20, value: 2, step: 1, handler: v => state.colNb = v },
-            { type: 'range', id: 'dith-str', label: 'dither strength', min: 0, max: 255, value: 255, step: 1, handler: v => state.ditherStrength = v / 255.0 },
-            { type: 'radio', name: 'bayer-size', label: 'bayer size', options: [2, 4, 8], default: 8, handler: v => state.bayerFilterSize = v }
-        ];
+            {
+                type: 'range',
+                id: 'col-nb',
+                label: 'color nb',
+                min: 2,
+                max: 20,
+                value: 2,
+                step: 1,
+                handler: (v) => (state.colNb = v),
+            },
+            {
+                type: 'range',
+                id: 'dith-str',
+                label: 'dither strength',
+                min: 0,
+                max: 255,
+                value: 255,
+                step: 1,
+                handler: (v) => (state.ditherStrength = v / 255.0),
+            },
+            {
+                type: 'radio',
+                name: 'bayer-size',
+                label: 'bayer size',
+                options: [2, 4, 8],
+                default: 8,
+                handler: (v) => (state.bayerFilterSize = v),
+            },
+        ]
 
-        this.addControllers(controls);
+        this.addControllers(controls)
     }
 
-    
-
     async init() {
-        await this.loadAsset();
-        this.createResources();
-        this.addControls();
+        await this.loadAsset()
+        this.createResources()
+        this.addControls()
     }
 
     render() {
-        const encoder = this.device.createCommandEncoder({ label: 'dithering' });
-        this.updateUniforms();
+        const encoder = this.device.createCommandEncoder({ label: 'dithering' })
+        this.updateUniforms()
 
         const pass = encoder.beginRenderPass({
-            colorAttachments: [{
-                view: this.renderCtx.getView(),
-                clearValue: [1.0, 1.0, 1.0, 1],
-                loadOp: 'clear',
-                storeOp: 'store'
-            }],    
-        });
-        pass.setPipeline(this.pipeline);
+            colorAttachments: [
+                {
+                    view: this.renderCtx.getView(),
+                    clearValue: [1.0, 1.0, 1.0, 1],
+                    loadOp: 'clear',
+                    storeOp: 'store',
+                },
+            ],
+        })
+        pass.setPipeline(this.pipeline)
         pass.setBindGroup(0, this.bindGroup)
-        pass.draw(6);
+        pass.draw(6)
         pass.end()
 
         const commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])
     }
 
-
     // static transformCanvas(p, canvasWidth, canvasHeight) {
     //     let angle = p*180.
     //     let radians = angle * (Math.PI / 180.);
-    
+
     //     const W = canvasWidth * Math.abs(Math.cos(radians)) + canvasHeight * Math.abs(Math.sin(radians));
     //     const H = canvasWidth * Math.abs(Math.sin(radians)) + canvasHeight * Math.abs(Math.cos(radians));
     //     const a = Math.min(canvasWidth / W, canvasHeight / H);
 
     //     const rotationMatrix = mat4.create();
     //     mat4.rotate(rotationMatrix, rotationMatrix, radians, [0, 0, 1]);
-    
+
     //     const scaleMatrix = mat4.create();
     //     mat4.scale(scaleMatrix, scaleMatrix, [a, a, 1]);
-        
+
     //     const transformMatrix = mat4.multiply(mat4.create(), rotationMatrix, scaleMatrix);
-    
+
     //     return transformMatrix;
     // }
 }
