@@ -75,7 +75,6 @@ export class RenderModel {
                 label.appendChild(input)
             } else if (ctrl.type == 'radio') {
                 const container = document.createElement('div')
-
                 ctrl.options.forEach((size) => {
                     const radio = document.createElement('input')
                     radio.type = 'radio'

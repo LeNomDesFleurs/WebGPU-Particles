@@ -32,6 +32,7 @@ export class PixelSortingModel extends RenderModel {
 
         // --------------------------- BIND GROUP
         const bindGroupLayout = this.device.createBindGroupLayout({
+            label: "sortingbindgroup",
             entries: [
                 {
                     binding: 0,
@@ -92,27 +93,31 @@ export class PixelSortingModel extends RenderModel {
 
         this.layout = bindGroupLayout
 
-        this.createMaskPipeline = this.device.createRenderPipeline({
+        const pipelineLayout = this.device.createPipelineLayout({
+        bindGroupLayouts: [bindGroupLayout],
+    });
+
+        this.createMaskPipeline = this.device.createComputePipeline({
             label: 'createMaskPipeline',
-            layout: this.pipelineLayout,
+            layout: pipelineLayout,
             compute: {
                 module: this.shaderModules['sorting'],
                 entryPoint: 'CS_CreateMask',
             },
         })
 
-        this.identifyspanPipeline = this.device.createRenderPipeline({
+        this.identifyspanPipeline = this.device.createComputePipeline({
             label: 'identifyspanPipeline',
-            layout: this.pipelineLayout,
+            layout: pipelineLayout,
             compute: {
                 module: this.shaderModules['sorting'],
                 entryPoint: 'CS_IdentifySpans',
             },
         })
 
-        this.pixelsortPipeline = this.device.createRenderPipeline({
+        this.pixelsortPipeline = this.device.createComputePipeline({
             label: 'pixelsortPipeline',
-            layout: this.pipelineLayout,
+            layout: pipelineLayout,
             compute: {
                 module: this.shaderModules['sorting'],
                 entryPoint: 'CS_PixelSort',
@@ -141,10 +146,12 @@ export class PixelSortingModel extends RenderModel {
     encodeRenderPass() {
         throw new Error('encodeRenderPass() must be implemented by subclass')
     }
-    render() {
+    async render() {
         const canvas = document.getElementById('gfx')
         const context = canvas.getContext('webgpu')
         const outputTexture = context.getCurrentTexture()
+
+        this.updateUniforms();
 
         const bindGroup = this.device.createBindGroup({
             label: 'sorting buffer',
@@ -173,9 +180,8 @@ export class PixelSortingModel extends RenderModel {
 
         const encoder = this.device.createCommandEncoder({ label: 'sorting' })
 
-        const source = createImageBitmap('IMAGE_URL', {
-            colorSpaceConversion: 'none',
-        })
+const source = await loadImageBitmap('../assets/rose.jpg')
+        // var source = createImageBitmap(IMAGE_URL, {colorSpaceConversion: 'none',})
 
         this.device.queue.copyExternalImageToTexture(
             { source: source },
@@ -286,7 +292,7 @@ export class PixelSortingModel extends RenderModel {
                 type: 'radio',
                 name: 'SortBy',
                 label: 'SortBy',
-                option: [0, 1, 2],
+                options: [0, 1, 2],
                 default: 0,
                 handler: (v) => (state.SortBy = v),
             },
@@ -311,13 +317,12 @@ export class PixelSortingModel extends RenderModel {
                 handler: (v) => (state.SortedGamma = v / 255.0),
             },
         ]
-
         this.addControllers(controls)
     }
 
     async init() {
         await this.loadAsset()
         this.createResources()
-        this.addControllers()
+        this.addControls()
     }
 }
