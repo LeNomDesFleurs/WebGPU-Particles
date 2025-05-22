@@ -37,6 +37,7 @@ Experimenting with particle systems in web-GPU
 - [ ] shader preprocessor (include)
 - [ ] chain shaders
 - [ ] preview original
+- [ ] Half res preview option
 
 
 ## References
