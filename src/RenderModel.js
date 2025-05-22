@@ -134,7 +134,8 @@ export class RenderModel {
             size: [size.width, size.height],
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
-                GPUTextureUsage.COPY_DST,
+                GPUTextureUsage.COPY_DST |
+                GPUTextureUsage.RENDER_ATTACHMENT,
         })
         this.textures[name] = texture
         return texture

@@ -24,6 +24,7 @@ export class DitheringModel extends RenderModel {
             .add({ name: 'bayer_filter_size', type: 'f32' })
             .add({ name: 'pixelate', type: 'f32' })
             .build()
+        
 
         const bindGroupLayout = this.device.createBindGroupLayout({
             entries: [

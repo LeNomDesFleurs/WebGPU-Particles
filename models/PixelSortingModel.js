@@ -19,7 +19,7 @@ export class PixelSortingModel extends RenderModel {
     createResources() {
         const bufferBuilder = new UniformBufferBuilder(this.device)
         this.uniformBuffer = bufferBuilder
-            .add({ name: 'resolution', type: 'vec2f' })
+            .add({ name: 'resolution', type: 'vec2' })
             .add({ name: 'LowThreshold', type: 'f32' })
             .add({ name: 'HighThreshold', type: 'f32' })
             .add({ name: 'InvertMask', type: 'f32' })
@@ -30,9 +30,10 @@ export class PixelSortingModel extends RenderModel {
             .add({ name: 'SortedGamma', type: 'f32' })
             .build()
 
+        
         // --------------------------- BIND GROUP
         const bindGroupLayout = this.device.createBindGroupLayout({
-            label: "sortingbindgroup",
+            label: 'sortingbindgroup',
             entries: [
                 {
                     binding: 0,
@@ -94,8 +95,8 @@ export class PixelSortingModel extends RenderModel {
         this.layout = bindGroupLayout
 
         const pipelineLayout = this.device.createPipelineLayout({
-        bindGroupLayouts: [bindGroupLayout],
-    });
+            bindGroupLayouts: [bindGroupLayout],
+        })
 
         this.createMaskPipeline = this.device.createComputePipeline({
             label: 'createMaskPipeline',
@@ -123,98 +124,6 @@ export class PixelSortingModel extends RenderModel {
                 entryPoint: 'CS_PixelSort',
             },
         })
-    }
-    updateUniforms(...args) {
-        const canvasSize = this.renderCtx.getCanvasSize()
-        this.uniformBuffer.set(
-            'transform-matrix',
-            DitheringModel.transformCanvas(
-                state.p,
-                canvasSize[0],
-                canvasSize[1]
-            )
-        )
-        this.uniformBuffer.set('resolution', canvasSize)
-        // this.uniformBuffer.set('col-nb', state.colNb);
-        // this.uniformBuffer.set('dith-str', state.ditherStrength);
-        this.device.queue.writeBuffer(
-            this.uniformBuffer.getBufferObject(),
-            0,
-            this.uniformBuffer.getBuffer()
-        )
-    }
-    encodeRenderPass() {
-        throw new Error('encodeRenderPass() must be implemented by subclass')
-    }
-    async render() {
-        const canvas = document.getElementById('gfx')
-        const context = canvas.getContext('webgpu')
-        const outputTexture = context.getCurrentTexture()
-
-        this.updateUniforms();
-
-        const bindGroup = this.device.createBindGroup({
-            label: 'sorting buffer',
-            layout: this.layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: { buffer: this.uniformBuffer.getBufferObject() },
-                },
-                {
-                    binding: 1,
-                    resource: this.textures['texture-input'].createView(),
-                },
-                { binding: 2, resource: outputTexture.createView() },
-                { binding: 3, resource: this.textures['mask'].createView() },
-                {
-                    binding: 4,
-                    resource: this.textures['sortvalues'].createView(),
-                },
-                {
-                    binding: 5,
-                    resource: this.textures['spanlenghts'].createView(),
-                },
-            ],
-        })
-
-        const encoder = this.device.createCommandEncoder({ label: 'sorting' })
-
-const source = await loadImageBitmap('../assets/rose.jpg')
-        // var source = createImageBitmap(IMAGE_URL, {colorSpaceConversion: 'none',})
-
-        this.device.queue.copyExternalImageToTexture(
-            { source: source },
-            { texture: this.textures['texture-input'] },
-            { width: source.width, height: source.height }
-        )
-
-        const pass = encoder.beginComputePass()
-
-        // let width = canvas.width;
-        let width = this.textures['texture-input'].width
-        // let height = canvas.height;
-        let height = this.textures['texture-input'].height
-
-        pass.setBindGroup(0, bindGroup)
-        pass.setPipeline(this.createMaskPipeline)
-        pass.dispatchWorkgroups(width / 8, height / 8)
-        // pass.setPipeline(createsortvaluePipeline)
-        // pass.dispatchWorkgroups(width / 8, height / 8);
-        // pass.setPipeline(clearbufferPipeline)
-        // pass.dispatchWorkgroups(width / 8, height / 8);
-        pass.setPipeline(this.identifyspanPipeline)
-        pass.dispatchWorkgroups(width / 8, height / 8)
-        // pass.setPipeline(visualizePipeline)
-        // pass.dispatchWorkgroups(width, height);
-        pass.setPipeline(this.pixelsortPipeline)
-        pass.dispatchWorkgroups(width / 8, height / 8)
-        // pass.setPipeline(compositePipeline)
-        // pass.dispatchWorkgroups(width / 8, height / 8);
-        pass.end()
-
-        const commandBuffer = encoder.finish()
-        this.device.queue.submit([commandBuffer])
     }
 
     updateUniforms(...args) {
@@ -318,6 +227,85 @@ const source = await loadImageBitmap('../assets/rose.jpg')
             },
         ]
         this.addControllers(controls)
+    }
+
+    async render() {
+        const canvas = document.getElementById('gfx')
+        const context = canvas.getContext('webgpu')
+
+        context.configure({
+        device: this.device,
+        format: 'rgba8unorm',
+        usage: GPUTextureUsage.STORAGE_BINDING
+    });
+
+        const outputTexture = context.getCurrentTexture()
+
+        this.updateUniforms()
+        var buffer = this.uniformBuffer;
+        
+        const bindGroup = this.device.createBindGroup({
+            label: 'sorting buffer',
+            layout: this.layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: { buffer: buffer.getBufferObject() },
+                },
+                {
+                    binding: 1,
+                    resource: this.textures['texture-input'].createView(),
+                },
+                { binding: 2, resource: outputTexture.createView() },
+                { binding: 3, resource: this.textures['mask'].createView() },
+                {
+                    binding: 4,
+                    resource: this.textures['sortvalues'].createView(),
+                },
+                {
+                    binding: 5,
+                    resource: this.textures['spanlenghts'].createView(),
+                },
+            ],
+        })
+
+        const encoder = this.device.createCommandEncoder({ label: 'sorting' })
+
+        const source = await loadImageBitmap('../assets/rose.jpg')
+        // var source = createImageBitmap(IMAGE_URL, {colorSpaceConversion: 'none',})
+
+        this.device.queue.copyExternalImageToTexture(
+            { source: source },
+            { texture: this.textures['texture-input'] },
+            { width: source.width, height: source.height }
+        )
+
+        const pass = encoder.beginComputePass()
+
+        // let width = canvas.width;
+        let width = this.textures['texture-input'].width
+        // let height = canvas.height;
+        let height = this.textures['texture-input'].height
+
+        pass.setBindGroup(0, bindGroup)
+        pass.setPipeline(this.createMaskPipeline)
+        pass.dispatchWorkgroups(width / 8, height / 8)
+        // pass.setPipeline(createsortvaluePipeline)
+        // pass.dispatchWorkgroups(width / 8, height / 8);
+        // pass.setPipeline(clearbufferPipeline)
+        // pass.dispatchWorkgroups(width / 8, height / 8);
+        pass.setPipeline(this.identifyspanPipeline)
+        pass.dispatchWorkgroups(width / 8, height / 8)
+        // pass.setPipeline(visualizePipeline)
+        // pass.dispatchWorkgroups(width, height);
+        pass.setPipeline(this.pixelsortPipeline)
+        pass.dispatchWorkgroups(width / 8, height / 8)
+        // pass.setPipeline(compositePipeline)
+        // pass.dispatchWorkgroups(width / 8, height / 8);
+        pass.end()
+
+        const commandBuffer = encoder.finish()
+        this.device.queue.submit([commandBuffer])
     }
 
     async init() {
