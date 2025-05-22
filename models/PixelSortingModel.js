@@ -10,10 +10,10 @@ export class PixelSortingModel extends RenderModel {
         const source = await loadImageBitmap('../assets/rose.jpg')
         await this.addTexture('texture-input', '../assets/rose.jpg')
         var size = { width: source.width, height: source.height }
-        await this.addStorage('mask', 'r32sint', size)
-        await this.addStorage('sortvalues', 'r32float', size)
-        await this.addStorage('spanlenghts', 'r32uint', size)
-        await this.addShaderModule('sorting', '../shaders/sorting.wgsl')
+        await this.addStorage('mask', 'r32sint', size);
+        await this.addStorage('sortvalues', 'r32float', size);
+        await this.addStorage('spanlenghts', 'r32uint', size);
+        await this.addShaderModule('sorting', '../shaders/sorting.wgsl');
     }
 
     createResources() {
@@ -30,7 +30,6 @@ export class PixelSortingModel extends RenderModel {
             .add({ name: 'SortedGamma', type: 'f32' })
             .build()
 
-        
         // --------------------------- BIND GROUP
         const bindGroupLayout = this.device.createBindGroupLayout({
             label: 'sortingbindgroup',
@@ -124,6 +123,15 @@ export class PixelSortingModel extends RenderModel {
                 entryPoint: 'CS_PixelSort',
             },
         })
+
+        this.visualizePipeline = this.device.createComputePipeline({
+            label: 'pixelsortPipeline',
+            layout: pipelineLayout,
+            compute: {
+                module: this.shaderModules['sorting'],
+                entryPoint: 'CS_VisualizeSpans',
+            },
+        })
     }
 
     updateUniforms(...args) {
@@ -153,7 +161,7 @@ export class PixelSortingModel extends RenderModel {
                 label: 'LowThreshold',
                 min: 0,
                 max: 255,
-                value: 2,
+                value: 100,
                 step: 1,
                 handler: (v) => (state.LowThreshold = v / 255.0),
             },
@@ -163,7 +171,7 @@ export class PixelSortingModel extends RenderModel {
                 label: 'HighThreshold',
                 min: 0,
                 max: 255,
-                value: 255,
+                value: 180,
                 step: 1,
                 handler: (v) => (state.HighThreshold = v / 255.0),
             },
@@ -179,13 +187,13 @@ export class PixelSortingModel extends RenderModel {
             },
             {
                 type: 'range',
-                id: 'InvertMask',
-                label: 'InvertMask',
+                id: 'SpanLimit',
+                label: 'SpanLimit',
                 min: 1,
                 max: 2000,
                 value: 500,
                 step: 1,
-                handler: (v) => (state.InvertMask = v),
+                handler: (v) => (state.SpanLimit = v),
             },
             {
                 type: 'range',
@@ -230,20 +238,29 @@ export class PixelSortingModel extends RenderModel {
     }
 
     async render() {
+        const source = await loadImageBitmap('../assets/rose.jpg')
+        // var source = createImageBitmap(IMAGE_URL, {colorSpaceConversion: 'none',})
+
+        this.device.queue.copyExternalImageToTexture(
+            { source: source },
+            { texture: this.textures['texture-input'] },
+            { width: source.width, height: source.height }
+        )
+
         const canvas = document.getElementById('gfx')
         const context = canvas.getContext('webgpu')
 
         context.configure({
-        device: this.device,
-        format: 'rgba8unorm',
-        usage: GPUTextureUsage.STORAGE_BINDING
-    });
+            device: this.device,
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.STORAGE_BINDING,
+        })
 
         const outputTexture = context.getCurrentTexture()
 
         this.updateUniforms()
-        var buffer = this.uniformBuffer;
-        
+        var buffer = this.uniformBuffer
+
         const bindGroup = this.device.createBindGroup({
             label: 'sorting buffer',
             layout: this.layout,
@@ -256,8 +273,14 @@ export class PixelSortingModel extends RenderModel {
                     binding: 1,
                     resource: this.textures['texture-input'].createView(),
                 },
-                { binding: 2, resource: outputTexture.createView() },
-                { binding: 3, resource: this.textures['mask'].createView() },
+                {
+                    binding: 2,
+                    resource: outputTexture.createView(),
+                },
+                {
+                    binding: 3,
+                    resource: this.textures['mask'].createView(),
+                },
                 {
                     binding: 4,
                     resource: this.textures['sortvalues'].createView(),
@@ -270,15 +293,6 @@ export class PixelSortingModel extends RenderModel {
         })
 
         const encoder = this.device.createCommandEncoder({ label: 'sorting' })
-
-        const source = await loadImageBitmap('../assets/rose.jpg')
-        // var source = createImageBitmap(IMAGE_URL, {colorSpaceConversion: 'none',})
-
-        this.device.queue.copyExternalImageToTexture(
-            { source: source },
-            { texture: this.textures['texture-input'] },
-            { width: source.width, height: source.height }
-        )
 
         const pass = encoder.beginComputePass()
 
@@ -296,7 +310,7 @@ export class PixelSortingModel extends RenderModel {
         // pass.dispatchWorkgroups(width / 8, height / 8);
         pass.setPipeline(this.identifyspanPipeline)
         pass.dispatchWorkgroups(width / 8, height / 8)
-        // pass.setPipeline(visualizePipeline)
+        // pass.setPipeline(this.visualizePipeline)
         // pass.dispatchWorkgroups(width, height);
         pass.setPipeline(this.pixelsortPipeline)
         pass.dispatchWorkgroups(width / 8, height / 8)

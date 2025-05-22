@@ -3,14 +3,14 @@ export const state = {
 	ditherStrength: 1.0,
 	bayerFilterSize: 8.0,
 	pixelate: 1.0,
-LowThreshold: 0.0,
-HighThreshold: 1.0,
+LowThreshold: 0.2,
+HighThreshold: 0.6,
 InvertMask: 0.0,
 SpanLimit:200,
 MaskRandomOffset:0.0,
 SortBy:0.0,
 	ReverseSorting: 0.0,
-SortedGamma:0.0,
+SortedGamma:1.0,
 }
 
 export const CANVAS_ID = 'gfx';

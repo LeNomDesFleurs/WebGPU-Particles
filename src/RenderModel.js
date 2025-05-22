@@ -130,7 +130,7 @@ export class RenderModel {
     async addStorage(name, format = "r32float", size) { 
         const texture = this.device.createTexture({
             label: name,
-            format,
+            format: format,
             size: [size.width, size.height],
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
