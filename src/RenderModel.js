@@ -108,7 +108,7 @@ export class RenderModel {
 
             var shaderSrc = await loadWGSL(path)
 
-
+// from here https://stackoverflow.com/questions/33631041/javascript-async-await-in-replace
         async function replaceAsync(str, regex, asyncFn) {
     const promises = [];
     str.replace(regex, (full, ...args) => {
@@ -119,14 +119,7 @@ export class RenderModel {
     return str.replace(regex, () => data.shift());
 }
 
-            // const addInclude = (wgsl, snippets) => 
-            // shaderSrc.replace(/#include\s+"(.*?)"/g, (_, name) => loadWGSL(name));
-
-            // shaderSrc = shaderSrc.replace(/#include\s+"(.*?)"/g, (_, path) => {
-            //     const res = loadWGSL(path).then((res) => res)
-            //     return res;
-            // });
-
+ 
             var shaderSrc = await replaceAsync(shaderSrc, /#include\s+"(.*?)"/g, async (_, path)=> await loadWGSL(path));
             // shaderSrc.replace(/#include\s+"(.*?)"/g => "test");
 

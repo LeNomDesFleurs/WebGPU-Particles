@@ -34,7 +34,7 @@ Experimenting with particle systems in web-GPU
 - [ ] selection de mode
 - [ ] Uniform generator
 - [ ] keyboard shortcut interaction
-- [ ] shader preprocessor (include)
+- [x] shader preprocessor (include)
 - [ ] chain shaders
 - [ ] preview original
 - [ ] Half res preview option
