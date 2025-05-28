@@ -5,6 +5,17 @@ import { state } from '../src/utils.js'
 var IMAGE_URL = '../assets/rose.jpg'
 let DITHERING_SHADER_PATH = './shaders/dithering.wgsl'
 
+const VERTEX_DATA = new Float32Array([
+     -1.0, -1.0, 0.0,  0.0,  // center
+    1.0, -1.0, 1.0,  0.0,  // right, center
+    -1.0, 1.0, 0.0,  1.0,  // center, top
+
+    // 2nd triangle
+    -1.0, 1.0, 0.0,  1.0,  // center, top
+     1.0, -1.0, 1.0,  0.0,  // right, center
+     1.0, 1.0, 1.0,  1.0,  // right, top
+])
+
 export class DitheringModel extends RenderModel {
     constructor(device, renderCtx) {
         super(device, renderCtx)
@@ -25,6 +36,14 @@ export class DitheringModel extends RenderModel {
             .add({ name: 'pixelate', type: 'f32' })
             .build()
         
+        
+        this.vertexBuffer = this.device.createBuffer({
+            label: 'vertex buffer vertices',
+            size: VERTEX_DATA.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        });
+        this.device.queue.writeBuffer(this.vertexBuffer, 0, VERTEX_DATA);
+            
 
         const bindGroupLayout = this.device.createBindGroupLayout({
             entries: [
@@ -76,13 +95,23 @@ export class DitheringModel extends RenderModel {
         this.pipeline = this.device.createRenderPipeline({
             label: 'dithering-pipeline',
             layout: pipelineLayout,
-            vertex: { module: this.shaderModules['dithering'] },
+            vertex: { 
+                module: this.shaderModules['dithering'],
+                buffers: [
+                    {
+                        arrayStride: 4 * 4,
+                        attributes: [
+                            { shaderLocation: 0, offset: 0, format: 'float32x2'},
+                            { shaderLocation: 1, offset: 2 * 4, format: 'float32x2'}
+                        ]
+                    }
+                ],
+            },
             fragment: {
                 module: this.shaderModules['dithering'],
                 targets: [{ format: this.renderCtx.getFormat() }],
             },
         })
-        console.log('pipeline format:', this.renderCtx.getFormat());
     }
 
     updateUniforms(...args) {
@@ -169,6 +198,7 @@ export class DitheringModel extends RenderModel {
         })
         pass.setPipeline(this.pipeline)
         pass.setBindGroup(0, this.bindGroup)
+        pass.setVertexBuffer(0, this.vertexBuffer);
         pass.draw(6)
         pass.end()
         console.log('view format:', this.renderCtx.getFormat());

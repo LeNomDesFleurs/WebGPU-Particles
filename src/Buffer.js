@@ -44,6 +44,11 @@ class UniformBuffer /*extends WGPUBuffer*/ {
     }
 }
 
+
+class VertexBuffer {
+    
+}
+
 export class UniformBufferBuilder {
     constructor(device) {
         this.size = 0

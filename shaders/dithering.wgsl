@@ -12,6 +12,11 @@ struct OurVertexShaderOutput {
     @location(0) texcoord: vec2f,
 };
 
+struct Vertex {
+    @location(0) position: vec2f,
+    @location(1) texCoord: vec2f
+}
+
 @group(0) @binding(0)
 var<uniform> uniforms: Uniforms;
 @group(0) @binding(1) var ourSampler: sampler;
@@ -21,23 +26,11 @@ var<uniform> uniforms: Uniforms;
 // TODO think -> some other dithering than bayer ? ==> what if i change this every frame ? (randomize)
 
 @vertex
-fn vs(@builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
-    let vertices = array(
-        // 1st triangle
-        vec4f( -1.0, -1.0, 0.0,  0.0),  // center
-        vec4f(1.0, -1.0, 1.0,  0.0),  // right, center
-        vec4f(-1.0, 1.0, 0.0,  1.0),  // center, top
-
-        // 2nd triangle
-        vec4f(-1.0, 1.0, 0.0,  1.0),  // center, top
-        vec4f( 1.0, -1.0, 1.0,  0.0),  // right, center
-        vec4f( 1.0, 1.0, 1.0,  1.0),  // right, top
-    );
+fn vs(vert: Vertex, @builtin(vertex_index) vertexIndex : u32) -> OurVertexShaderOutput {
     var vsOutput: OurVertexShaderOutput;
 
-    let vertex = vertices[vertexIndex];
-    vsOutput.position = vec4f(vertex.xy, 0.0, 1.0);
-    vsOutput.texcoord = vec2f(vertex.z, 1-vertex.w);
+    vsOutput.position = vec4f(vert.position.xy, 0.0, 1.0);
+    vsOutput.texcoord = vec2f(vert.texCoord.x, 1-vert.texCoord.y);
     return vsOutput;
 }
 

@@ -8,7 +8,7 @@ const MODELS = [ComputeDCTModel, DitheringModel, PixelSortingModel];
 let CURRENT_MODEL;
 
 async function init(renderContext) {
-    CURRENT_MODEL = new PixelSortingModel(
+    CURRENT_MODEL = new DitheringModel(
         renderContext.getDevice(),
         renderContext
     )
