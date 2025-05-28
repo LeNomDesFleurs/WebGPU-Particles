@@ -18,7 +18,7 @@ export class RenderModel {
         await this.replaceTexture('texture-input', file)
         await this.createResources()
     }
-    
+
     createResources() {
         throw new Error('createResources() must be implemented by subclass')
     }
@@ -39,15 +39,15 @@ export class RenderModel {
         input.type = "file"
         input.accept = "image/png, image/jpg"
         input.addEventListener('change', async (event) => {
-                const file = event.target.files[0]
-                // create a temp. image object
-                const data = await createImageBitmap(file, {
-                    colorSpaceConversion: 'none',
-                })
-
-                await this.updateImage(data)
-                this.render()
+            const file = event.target.files[0]
+            // create a temp. image object
+            const data = await createImageBitmap(file, {
+                colorSpaceConversion: 'none',
             })
+
+            await this.updateImage(data)
+            this.render()
+        })
         fileLabel.appendChild(input);
         container.appendChild(fileLabel);
         // throw new Error('addControls() must be implemented by subclass')
@@ -106,7 +106,34 @@ export class RenderModel {
             if (this.shaderModules.has(name))
                 throw new Error('shader name already exists')
 
-            const shaderSrc = await loadWGSL(path)
+            var shaderSrc = await loadWGSL(path)
+
+
+        async function replaceAsync(str, regex, asyncFn) {
+    const promises = [];
+    str.replace(regex, (full, ...args) => {
+        promises.push(asyncFn(full, ...args));
+        return full;
+    });
+    const data = await Promise.all(promises);
+    return str.replace(regex, () => data.shift());
+}
+
+            // const addInclude = (wgsl, snippets) => 
+            // shaderSrc.replace(/#include\s+"(.*?)"/g, (_, name) => loadWGSL(name));
+
+            // shaderSrc = shaderSrc.replace(/#include\s+"(.*?)"/g, (_, path) => {
+            //     const res = loadWGSL(path).then((res) => res)
+            //     return res;
+            // });
+
+            var shaderSrc = await replaceAsync(shaderSrc, /#include\s+"(.*?)"/g, async (_, path)=> await loadWGSL(path));
+            // shaderSrc.replace(/#include\s+"(.*?)"/g => "test");
+
+
+
+            console.log(shaderSrc);
+
             const module = this.device.createShaderModule({
                 label: name,
                 code: shaderSrc,
@@ -127,7 +154,7 @@ export class RenderModel {
         await this.addTexture(name, bitmap, (format = 'rgba8unorm'))
     }
 
-    async addStorage(name, format = "r32float", size) { 
+    async addStorage(name, format = "r32float", size) {
         const texture = this.device.createTexture({
             label: name,
             format: format,
@@ -155,7 +182,7 @@ export class RenderModel {
         })
         this.textures[name] = texture
         this.device.queue.copyExternalImageToTexture(
-            { source},
+            { source },
             { texture },
             { width: source.width, height: source.height }
         )

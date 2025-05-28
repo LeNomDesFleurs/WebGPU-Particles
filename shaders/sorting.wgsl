@@ -1,3 +1,5 @@
+#include "../shaders/common.wgsl"
+
 // stuff to tweak
 // CS_PixelSort workgroup size
 
@@ -54,49 +56,7 @@ var s_SortValue: texture_storage_2d<r32float, read_write>;
 @group(0) @binding(5)
 var s_SpanLengths: texture_storage_2d<r32uint, read_write>;
 
-const AFX_EPSILON: f32 = 0.001;
 
-fn RGBtoHCV(RGB: vec3f) -> vec3f {
-    // Based on work by Sam Hocevar and Emil Persson
-    var P: vec4f;
-    if (RGB.g < RGB.b) {
-        P = vec4f(RGB.bg, - 1.0, 2.0 / 3.0);
-    }
-    else {
-        P = vec4f(RGB.gb, 0.0, - 1.0 / 3.0);
-    }
-    var Q: vec4f;
-    if (RGB.r < P.x) {
-        Q = vec4f(P.xyw, RGB.r);
-    }
-    else {
-        Q = vec4f(RGB.r, P.yzx);
-    }
-    let C: f32 = Q.x - min(Q.w, Q.y);
-    let H: f32 = abs((Q.w - Q.y) / (6 * C + AFX_EPSILON) + Q.z);
-    return vec3f(H, C, Q.x);
-}
-
-fn RGBtoHSL(RGB: vec3f) -> vec3f {
-    let HCV: vec3f = RGBtoHCV(RGB);
-    let L: f32 = HCV.z - HCV.y * 0.5;
-    let S: f32 = HCV.y / (1 - abs(L * 2 - 1) + AFX_EPSILON);
-    return vec3f(HCV.x, S, L);
-}
-
-fn hash(nn: u32) -> f32 {
-
-    var n: u32 = nn;
-    // integer hash copied from Hugo Elias
-    // n = (n << 13) ^ n;
-    // n = n * (n * n * 15731 + u32(0x789221)) + u64(0x1376312589);
-    // return f32(n & u32(0x7fffffff)) / f32(0x7fffffff);
-    return 0.2f;
-}
-
-fn Luminance(color: vec3f) -> f32 {
-    return max(0.00001f, dot(color, vec3f(0.2127f, 0.7152f, 0.0722f)));
-}
 
 @compute @workgroup_size(8, 8)
 fn CS_CreateMask(@builtin(global_invocation_id) id: vec3u) {

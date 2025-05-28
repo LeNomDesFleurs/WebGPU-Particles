@@ -5,7 +5,11 @@ import { loadImageBitmap } from '../src/utils.js'
 
 var IMAGE_URL = '../assets/rose.jpg'
 
+
+
 export class PixelSortingModel extends RenderModel {
+
+
     async loadAsset() {
         const source = await loadImageBitmap('../assets/rose.jpg')
         await this.addTexture('texture-input', '../assets/rose.jpg')
