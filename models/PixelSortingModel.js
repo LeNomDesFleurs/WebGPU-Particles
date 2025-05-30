@@ -11,8 +11,7 @@ export class PixelSortingModel extends RenderModel {
 
 
     async loadAsset() {
-        const source = await loadImageBitmap('../assets/rose.jpg')
-        await this.addTexture('texture-input', '../assets/rose.jpg')
+        const source = await this.addTexture('texture-input', IMAGE_URL)
         var size = { width: source.width, height: source.height }
         await this.addStorage('mask', 'r32sint', size);
         await this.addStorage('sortvalues', 'r32float', size);
@@ -21,8 +20,7 @@ export class PixelSortingModel extends RenderModel {
     }
 
     createResources() {
-        const bufferBuilder = new UniformBufferBuilder(this.device)
-        this.uniformBuffer = bufferBuilder
+        this.uniformBuffer = this.uniformBufferBuilder
             .add({ name: 'resolution', type: 'vec2' })
             .add({ name: 'LowThreshold', type: 'f32' })
             .add({ name: 'HighThreshold', type: 'f32' })

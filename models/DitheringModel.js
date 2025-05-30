@@ -27,24 +27,21 @@ export class DitheringModel extends RenderModel {
     }
 
     createResources() {
-        const bufferBuilder = new UniformBufferBuilder(this.device)
-        this.uniformBuffer = bufferBuilder
+        this.uniformBuffer = this.uniformBufferBuilder
             .add({ name: 'resolution', type: 'vec2' })
             .add({ name: 'col-nb', type: 'f32' })
             .add({ name: 'dith-str', type: 'f32' })
             .add({ name: 'bayer_filter_size', type: 'f32' })
             .add({ name: 'pixelate', type: 'f32' })
             .build()
-        
-        
-        this.vertexBuffer = this.device.createBuffer({
-            label: 'vertex buffer vertices',
-            size: VERTEX_DATA.byteLength,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-        });
-        this.device.queue.writeBuffer(this.vertexBuffer, 0, VERTEX_DATA);
-            
 
+        this.vertexBuffer = this.vertexBufferBuilder
+            .bindBufferData(VERTEX_DATA)
+            .addAttribute({ location: 0, type: 'vec2f'})
+            .addAttribute({ location: 1, type: 'vec2f'})
+            .build();
+        this.vertexBuffer.apply() // TODO find a smoother way
+    
         const bindGroupLayout = this.device.createBindGroupLayout({
             entries: [
                 {
@@ -99,11 +96,8 @@ export class DitheringModel extends RenderModel {
                 module: this.shaderModules['dithering'],
                 buffers: [
                     {
-                        arrayStride: 4 * 4,
-                        attributes: [
-                            { shaderLocation: 0, offset: 0, format: 'float32x2'},
-                            { shaderLocation: 1, offset: 2 * 4, format: 'float32x2'}
-                        ]
+                        arrayStride: this.vertexBuffer.getStride(),
+                        attributes: this.vertexBuffer.getAttributes()
                     }
                 ],
             },
@@ -116,16 +110,13 @@ export class DitheringModel extends RenderModel {
 
     updateUniforms(...args) {
         const canvasSize = this.renderCtx.getCanvasSize()
-        this.uniformBuffer.set('resolution', canvasSize)
-        this.uniformBuffer.set('col-nb', state.colNb)
-        this.uniformBuffer.set('pixelate', state.pixelate)
-        this.uniformBuffer.set('dith-str', state.ditherStrength)
-        this.uniformBuffer.set('bayer_filter_size', state.bayerFilterSize)
-        this.device.queue.writeBuffer(
-            this.uniformBuffer.getBufferObject(),
-            0,
-            this.uniformBuffer.getBuffer()
-        )
+        this.uniformBuffer
+            .set('resolution', canvasSize)
+            .set('col-nb', state.colNb)
+            .set('pixelate', state.pixelate)
+            .set('dith-str', state.ditherStrength)
+            .set('bayer_filter_size', state.bayerFilterSize)
+            .apply();
     }
 
     addControls() {
@@ -198,31 +189,11 @@ export class DitheringModel extends RenderModel {
         })
         pass.setPipeline(this.pipeline)
         pass.setBindGroup(0, this.bindGroup)
-        pass.setVertexBuffer(0, this.vertexBuffer);
+        pass.setVertexBuffer(0, this.vertexBuffer.getBufferObject());
         pass.draw(6)
         pass.end()
-        console.log('view format:', this.renderCtx.getFormat());
 
         const commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])
     }
-
-    // static transformCanvas(p, canvasWidth, canvasHeight) {
-    //     let angle = p*180.
-    //     let radians = angle * (Math.PI / 180.);
-
-    //     const W = canvasWidth * Math.abs(Math.cos(radians)) + canvasHeight * Math.abs(Math.sin(radians));
-    //     const H = canvasWidth * Math.abs(Math.sin(radians)) + canvasHeight * Math.abs(Math.cos(radians));
-    //     const a = Math.min(canvasWidth / W, canvasHeight / H);
-
-    //     const rotationMatrix = mat4.create();
-    //     mat4.rotate(rotationMatrix, rotationMatrix, radians, [0, 0, 1]);
-
-    //     const scaleMatrix = mat4.create();
-    //     mat4.scale(scaleMatrix, scaleMatrix, [a, a, 1]);
-
-    //     const transformMatrix = mat4.multiply(mat4.create(), rotationMatrix, scaleMatrix);
-
-    //     return transformMatrix;
-    // }
 }

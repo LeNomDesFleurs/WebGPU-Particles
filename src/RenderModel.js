@@ -1,5 +1,5 @@
-import { getRendererContextInstance } from './RenderContext.js'
-import { loadImageBitmap, loadWGSL } from './utils.js'
+import { VertexBufferBuilder, UniformBufferBuilder } from './Buffer.js';
+import { loadImageBitmap, loadWGSL, replaceAsync } from './utils.js'
 
 export class RenderModel {
     constructor(device, renderCtx) {
@@ -9,6 +9,11 @@ export class RenderModel {
         this.shaderModules = new Map()
         this.textures = new Map()
         this._pipelineObject = null
+
+        this.uniformBufferBuilder = new UniformBufferBuilder(this.device)
+        this.vertexBufferBuilder = new VertexBufferBuilder(this.device);
+
+        // Default image
     }
 
     async loadAsset() {
@@ -33,7 +38,6 @@ export class RenderModel {
         // <label>PNG file: <input type="file" id="image_input" accept="image/png" id="load-image"></label>
         const container = document.getElementById("controller");
         const fileLabel = document.createElement("label");
-        console.log(container)
         fileLabel.textContent = "PNG file: "
         const input = document.createElement("input")
         input.type = "file"
@@ -106,30 +110,12 @@ export class RenderModel {
             if (this.shaderModules.has(name))
                 throw new Error('shader name already exists')
 
-            var shaderSrc = await loadWGSL(path)
-
-// from here https://stackoverflow.com/questions/33631041/javascript-async-await-in-replace
-        async function replaceAsync(str, regex, asyncFn) {
-    const promises = [];
-    str.replace(regex, (full, ...args) => {
-        promises.push(asyncFn(full, ...args));
-        return full;
-    });
-    const data = await Promise.all(promises);
-    return str.replace(regex, () => data.shift());
-}
-
- 
-            var shaderSrc = await replaceAsync(shaderSrc, /#include\s+"(.*?)"/g, async (_, path)=> await loadWGSL(path));
-            // shaderSrc.replace(/#include\s+"(.*?)"/g => "test");
-
-
-
-            console.log(shaderSrc);
+            let shaderSrc = await loadWGSL(path)
+            let shaderSrcReplaced = await replaceAsync(shaderSrc, /#include\s+"(.*?)"/g, async (_, path)=> await loadWGSL(path));
 
             const module = this.device.createShaderModule({
                 label: name,
-                code: shaderSrc,
+                code: shaderSrcReplaced,
             })
             this.shaderModules[name] = module
             return module
@@ -143,7 +129,6 @@ export class RenderModel {
         if (oldTexture && typeof oldTexture.destroy === 'function') {
             oldTexture.destroy()
         }
-        console.log(this)
         await this.addTexture(name, bitmap, (format = 'rgba8unorm'))
     }
 
