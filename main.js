@@ -7,7 +7,7 @@ import { state } from './src/utils.js'
 const MODELS = [ComputeDCTModel, DitheringModel, PixelSortingModel];
 let CURRENT_MODEL;
 
-async function init(renderContext) {
+async function initDefaultModel(renderContext) {
     CURRENT_MODEL = new DitheringModel(
         renderContext.getDevice(),
         renderContext
@@ -16,10 +16,49 @@ async function init(renderContext) {
     CURRENT_MODEL.render()
 }
 
+let zoomCanvas = null;
+let ZOOM_CANVAS_WIDTH = 250;
+let ZOOM_CANVAS_HEIGHT = 250;
+
+function moveZoomCanvas(e) {
+    if (!zoomCanvas) return;
+    zoomCanvas.style.left = (e.pageX - ZOOM_CANVAS_WIDTH / 2) + 'px';
+    zoomCanvas.style.top = (e.pageY - ZOOM_CANVAS_HEIGHT / 2) + 'px';
+}
+
+function removeZoomCanvas(e) {
+    if (!zoomCanvas) return;
+    zoomCanvas.remove();
+    zoomCanvas = null;
+
+    window.removeEventListener('mousemove', moveZoomCanvas);
+    window.removeEventListener('mouseup', removeZoomCanvas);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     const renderContext = await getRendererContextInstance()
-    
-    init(renderContext)
+    initDefaultModel(renderContext)
+
+    const canvas = renderContext.getContext();
+    canvas.addEventListener('mousedown', (e) => {
+        if (e.button == 2) {
+            zoomCanvas = document.createElement('canvas');
+            zoomCanvas.style.width = ZOOM_CANVAS_WIDTH + 'px'; //TODO something other than px
+            zoomCanvas.style.height = ZOOM_CANVAS_HEIGHT + 'px';
+            zoomCanvas.style.position = 'absolute';
+            zoomCanvas.style.left = (e.pageX - ZOOM_CANVAS_WIDTH / 2) + 'px';
+            zoomCanvas.style.top = (e.pageY - ZOOM_CANVAS_HEIGHT / 2) + 'px';
+            zoomCanvas.style.zIndex = 9999;
+            zoomCanvas.style.background = 'rgba(0, 0, 0, 0.1)'
+            zoomCanvas.style.borderRadius = '50%'
+            zoomCanvas.oncontextmenu = (e) => e.preventDefault();
+
+            document.body.appendChild(zoomCanvas);
+
+            window.addEventListener('mousemove', moveZoomCanvas);
+            window.addEventListener('mouseup', removeZoomCanvas);
+        }
+    })
 
     const modelsContainer = document.getElementById('models-container');
     MODELS.forEach((model) => {
