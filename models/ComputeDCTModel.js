@@ -102,12 +102,6 @@ export class ComputeDCTModel extends RenderModel {
         })
     }
 
-    async init() {
-        await this.loadAsset()
-        await this.createResources()
-        this.addControls();
-    }
-
     updateUniforms(freq = 8) {
         var canvasSize = this.renderCtx.getCanvasSize()
         canvasSize.width = freq

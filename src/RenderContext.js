@@ -33,7 +33,7 @@ class RenderContext {
     getDevice() { return this._device; }
     getFormat() { return this._format; }
     getCanvasSize() { return [this._canvas.width, this._canvas.height] }
-    getContext() { return this._canvas; }
+    getCanvas() { return this._canvas; }
 
     setCanvasSize(newWidth, newHeight) {
         const ratio = newHeight / newWidth; 

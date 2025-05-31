@@ -166,12 +166,6 @@ export class DitheringModel extends RenderModel {
 
     }
 
-    async init() {
-        await this.loadAsset()
-        this.createResources()
-        this.addControls()
-    }
-
     render() {
         const encoder = this.device.createCommandEncoder({ label: 'dithering' })
         this.updateUniforms()
@@ -180,7 +174,7 @@ export class DitheringModel extends RenderModel {
             label: 'nique',
             colorAttachments: [
                 {
-                    view: this.renderCtx.getView(),
+                    view: this.renderTexture.createView(),
                     clearValue: [1.0, 1.0, 1.0, 1],
                     loadOp: 'clear',
                     storeOp: 'store',
@@ -193,7 +187,6 @@ export class DitheringModel extends RenderModel {
         pass.draw(6)
         pass.end()
 
-        const commandBuffer = encoder.finish()
-        this.device.queue.submit([commandBuffer])
+        this.swapFramebuffer(encoder);
     }
 }

@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const renderContext = await getRendererContextInstance()
     initDefaultModel(renderContext)
 
-    const canvas = renderContext.getContext();
+    const canvas = renderContext.getCanvas();
     canvas.addEventListener('mousedown', (e) => {
         if (e.button == 2) {
             zoomCanvas = document.createElement('canvas');
