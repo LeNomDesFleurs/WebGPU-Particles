@@ -1,6 +1,7 @@
 import { VertexBufferBuilder, UniformBufferBuilder } from './Buffer.js';
 import { loadImageBitmap, loadWGSL, replaceAsync } from './utils.js'
 
+const ZOOM_FACTOR = 2.0;
 export class RenderModel {
     constructor(device, renderCtx) {
         this.renderCtx = renderCtx;
@@ -38,16 +39,61 @@ export class RenderModel {
         this.blitBindGroup = this.device.createBindGroup({
             layout: this.blitPipeline.getBindGroupLayout(0),
             entries: [
-              {
-                binding: 0,
-                resource: this.device.createSampler({}),
-              },
-              {
-                binding: 1,
-                resource: this.renderTexture.createView(),
-              },
+                {
+                    binding: 0,
+                    resource: this.device.createSampler({}),
+                },
+                {
+                    binding: 1,
+                    resource: this.renderTexture.createView(),
+                },
             ],
-          });
+        });
+
+        // for zoom
+        await this.addShaderModule('zoom', './shaders/zoom.wgsl')
+        this.zoomPipeline = this.device.createRenderPipeline({
+            layout: 'auto',
+            vertex: {
+                module: this.shaderModules['zoom'],
+                entryPoint: 'vs'
+            },
+            fragment: {
+                module: this.shaderModules['zoom'],
+                entryPoint: 'fs',
+                targets: [{format: this.renderCtx.getFormat()}]
+            }
+        })
+
+    }
+
+    async initZoom() {
+        const canvas = this.renderCtx.getZoomCanvas();
+        if (!canvas) return;
+
+        this.zoomParamsBuffer = this.device.createBuffer({
+            size: 24,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        this.zoomBindGroup = this.device.createBindGroup({
+            layout: this.zoomPipeline.getBindGroupLayout(0),
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.renderCtx.getSampler(),
+                },
+                {
+                    binding: 1,
+                    resource: this.renderTexture.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: { buffer: this.zoomParamsBuffer },
+                },
+
+            ],
+        });
     }
 
     async loadAsset() {
@@ -237,7 +283,34 @@ export class RenderModel {
         controllers.innerHTML = "";
 
         // this.device.queue
+    }
 
+    renderZoom(mouseX, mouseY, canvasWidth, canvasHeight) {
+        this.device.queue.writeBuffer(
+            this.zoomParamsBuffer,
+            0,
+            new Float32Array([mouseX / canvasWidth, mouseY / canvasHeight, ZOOM_FACTOR, canvasWidth, canvasHeight])
+        );
 
+        const encoder = this.device.createCommandEncoder({ label: 'zoom' })
+        const pass = encoder.beginRenderPass({
+            label: 'nique',
+            colorAttachments: [
+                {
+                    view: this.renderCtx.getZoomView(),
+                    clearValue: [1.0, 1.0, 1.0, 1],
+                    loadOp: 'clear',
+                    storeOp: 'store',
+                },
+            ],
+        })
+        pass.setPipeline(this.zoomPipeline)
+        pass.setBindGroup(0, this.zoomBindGroup)
+        pass.setVertexBuffer(0, this.vertexBuffer.getBufferObject());
+        pass.draw(6)
+        pass.end()
+
+        const commandBuffer = encoder.finish();
+        this.device.queue.submit([commandBuffer]);
     }
 }

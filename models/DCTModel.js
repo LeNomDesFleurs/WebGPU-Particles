@@ -220,11 +220,6 @@ export class DCTModel extends RenderModel {
         this.device.queue.submit([commandBuffer])
     }
 
-    async init() {
-        await this.loadAsset()
-        this.createResources()
-    }
-
     addControllers() {
         throw new Error('addControllers() must be implemented by subclass')
     }
