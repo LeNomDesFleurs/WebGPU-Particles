@@ -323,10 +323,4 @@ export class PixelSortingModel extends RenderModel {
         const commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])
     }
-
-    async init() {
-        await this.loadAsset()
-        this.createResources()
-        this.addControls()
-    }
 }

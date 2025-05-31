@@ -12,8 +12,42 @@ export class RenderModel {
 
         this.uniformBufferBuilder = new UniformBufferBuilder(this.device)
         this.vertexBufferBuilder = new VertexBufferBuilder(this.device);
+    }
 
-        // Default image
+    async initBlit() {
+        const canvas = this.renderCtx.getCanvas();
+        this.renderTexture = this.device.createTexture({
+            size: [canvas.width, canvas.height],
+            format: this.renderCtx.getFormat(),
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
+        });
+
+        await this.addShaderModule('blit', './shaders/blit.wgsl')
+        this.blitPipeline = this.device.createRenderPipeline({
+            layout: 'auto',
+            vertex: {
+                module: this.shaderModules['blit'],
+                entryPoint: 'vs'
+            },
+            fragment: {
+                module: this.shaderModules['blit'],
+                entryPoint: 'fs',
+                targets: [{format: this.renderCtx.getFormat()}]
+            }
+        })
+        this.blitBindGroup = this.device.createBindGroup({
+            layout: this.blitPipeline.getBindGroupLayout(0),
+            entries: [
+              {
+                binding: 0,
+                resource: this.device.createSampler({}),
+              },
+              {
+                binding: 1,
+                resource: this.renderTexture.createView(),
+              },
+            ],
+          });
     }
 
     async loadAsset() {
@@ -24,12 +58,15 @@ export class RenderModel {
         await this.createResources()
     }
 
-    createResources() {
-        throw new Error('createResources() must be implemented by subclass')
+    async init() {
+        await this.initBlit()
+        await this.loadAsset()
+        this.createResources()
+        this.addControls()
     }
-    updateUniforms(...args) {
-        throw new Error('updateUniforms() must be implemented by subclass')
-    }
+
+    createResources() {}
+    updateUniforms(...args) {}
     // encodeRenderPass() { throw new Error("encodeRenderPass() must be implemented by subclass"); }
     render() {
         throw new Error('render() must be implemented by subclass')
@@ -167,6 +204,26 @@ export class RenderModel {
         this.renderCtx.setCanvasSize(source.width, source.height);
 
         return texture
+    }
+
+    swapFramebuffer(encoder) {
+        const swapChainPass = encoder.beginRenderPass({
+            colorAttachments: [
+                {
+                    view: this.renderCtx.getView(), 
+                    loadOp: 'clear',
+                    storeOp: 'store',
+                    clearValue: [0, 0, 0, 1],
+                },
+            ],
+        });
+    
+        swapChainPass.setPipeline(this.blitPipeline);
+        swapChainPass.setBindGroup(0, this.blitBindGroup);
+        swapChainPass.draw(6);
+        swapChainPass.end();
+    
+        this.device.queue.submit([encoder.finish()]);
     }
 
     destroy() {
