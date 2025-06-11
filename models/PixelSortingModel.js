@@ -3,7 +3,7 @@ import { UniformBufferBuilder } from '../src/Buffer.js'
 import { state } from '../src/utils.js'
 import { loadImageBitmap } from '../src/utils.js'
 
-var IMAGE_URL = '../assets/rose.jpg'
+var IMAGE_URL = '../assets/rose_half.jpg'
 
 
 
@@ -317,7 +317,7 @@ export class PixelSortingModel extends RenderModel {
         // pass.setPipeline(this.visualizePipeline)
         // pass.dispatchWorkgroups(width, height);
         pass.setPipeline(this.pixelsortPipeline)
-        pass.dispatchWorkgroups(width / 8, height / 8)
+        pass.dispatchWorkgroups(width , height)
         // pass.setPipeline(compositePipeline)
         // pass.dispatchWorkgroups(width / 8, height / 8);
         pass.end()

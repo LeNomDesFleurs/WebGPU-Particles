@@ -31,7 +31,6 @@ What color information to sort by
 1 "Saturation\0"
 2 "Hue\0",
 */
-
     _SortBy: f32,
     _ReverseSorting: f32,
     // Adjust gamma of sorted pixels to accentuate them.
@@ -166,30 +165,29 @@ fn CS_IdentifySpans(@builtin(global_invocation_id) id: vec3u) {
         // #else
         // idx = vec2u(spanStartIndex, id.y);
         // #endif
+        // textureStore(s_SpanLengths, idx, vec4(spanLength, 0, 0, 0));
         textureStore(s_SpanLengths, idx, vec4(spanLength, 0, 0, 0));
     }
+
+
+   
 
 }
 
 var<workgroup> gs_PixelSortCache: array<f32, 1000>;
 
-@compute @workgroup_size(8, 8)
+@compute @workgroup_size(1, 1)
 fn CS_PixelSort(@builtin(global_invocation_id) id: vec3u) {
 
     let spanLength: u32 = u32(textureLoad(s_SpanLengths, id.xy).r);
 
     if (spanLength >= 1) {
         var idx: vec2u = vec2u(0);
-        // #if AFX_HORIZONTAL_SORT == 0
         const direction: vec2u = vec2u(0, 1);
-        // #else
-        // const uint2 direction = uint2(1, 0);
-        // #endif
 
         for (var k: u32 = 0; k < spanLength; k++) {
             idx = id.xy + k * direction;
-            var temp: f32 = textureLoad(s_SortValue, idx).r;
-            gs_PixelSortCache[k] = f32(temp);
+            gs_PixelSortCache[k] = textureLoad(s_SortValue, idx).r;
         }
 
         var minValue: f32 = gs_PixelSortCache[0];
@@ -222,18 +220,17 @@ fn CS_PixelSort(@builtin(global_invocation_id) id: vec3u) {
             var minIdx: vec2u = vec2u(0);
             var maxIdx: vec2u = vec2u(0);
 
-            // if (uni._ReverseSorting==1) {
-            //     minIdx = id.xy + i * direction;
-            //     maxIdx = id.xy + (spanLength - i - 1) * direction;
-            // } else {
+        
             minIdx = id.xy + (spanLength - i - 1) * direction;
             maxIdx = id.xy + i * direction;
             // }
 
             // var minColorIdx: vec2u = id.xy + minIndex * direction;
-            var minColorIdx: vec2u=id.xy;
+            var minColorIdx: vec2u = id.xy + minIndex * direction;
             // var maxColorIdx: vec2u = id.xy + maxIndex * direction;
-            var maxColorIdx: vec2u=id.xy;
+            var maxColorIdx: vec2u = id.xy + maxIndex * direction;
+
+           
 
             // load sorted pixels
             var color = pow(abs(textureLoad(inputTexture, minColorIdx.xy, 0)), vec4f(uni._SortedGamma));
@@ -247,6 +244,8 @@ fn CS_PixelSort(@builtin(global_invocation_id) id: vec3u) {
             maxValue = - 1;
         }
     }
+    //  var color:vec4f = vec4f(textureLoad(s_Mask, id.xy));
+    // textureStore(outputTexture, id.xy, color);
     CS_Composite(id);
 }
 

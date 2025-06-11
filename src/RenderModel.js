@@ -124,9 +124,6 @@ export class RenderModel {
             // shaderSrc.replace(/#include\s+"(.*?)"/g => "test");
 
 
-
-            console.log(shaderSrc);
-
             const module = this.device.createShaderModule({
                 label: name,
                 code: shaderSrc,
