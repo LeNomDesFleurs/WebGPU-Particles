@@ -21,7 +21,7 @@ var<uniform> uniforms: Uniforms;
 const PI:f32= 3.1415972;
 const SQRT2:f32= 0.70710678118;
 
-const NB_LEVELS:f32= 3.;
+const NB_LEVELS:f32= 11.;
 const NB_FREQ:i32= 8;
 
 fn DCTcoeff(k:vec2f, x:vec2f)->f32

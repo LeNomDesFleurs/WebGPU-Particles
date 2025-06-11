@@ -9,7 +9,7 @@ let CURRENT_MODEL;
 let renderContext;
 
 async function initDefaultModel(renderContext) {
-    CURRENT_MODEL = new DitheringModel(
+    CURRENT_MODEL = new ComputeDCTModel(
         renderContext.getDevice(),
         renderContext
     )

@@ -1,6 +1,8 @@
 import { RenderModel } from '../src/RenderModel.js'
 import { UniformBufferBuilder } from '../src/Buffer.js'
 
+var IMAGE_URL = '../assets/rose.jpg'
+
 export class ComputeDCTModel extends RenderModel {
     constructor(device, renderCtx) {
         super(device, renderCtx)
