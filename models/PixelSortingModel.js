@@ -3,7 +3,7 @@ import { UniformBufferBuilder } from '../src/Buffer.js'
 import { state } from '../src/utils.js'
 import { loadImageBitmap } from '../src/utils.js'
 
-var IMAGE_URL = '../assets/rose_half.jpg'
+var IMAGE_URL = '../assets/rose.jpg'
 
 
 
