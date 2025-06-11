@@ -33,9 +33,26 @@ class RenderContext {
     getDevice() { return this._device; }
     getFormat() { return this._format; }
     getCanvasSize() { return [this._canvas.width, this._canvas.height] }
+    getCanvas() { return this._canvas; }
+    getZoomCanvas() { return this.zoomCanvas; }
 
     setCanvasSize(newWidth, newHeight) {
         const ratio = newHeight / newWidth; 
         this._canvas.height = 1000 * ratio; // on va changer ca aussi 1000
+    }
+
+    setZoom(canvas) {
+        this.zoomCanvas = canvas;
+        this.zoomCtx = canvas.getContext('webgpu');
+        this.zoomCtx.configure({
+            device: this._device,
+            format: this._format
+        })
+    }
+    getZoomView() { return this.zoomCtx.getCurrentTexture().createView()}
+
+    clearZoom() {
+        this.zoomCanvas = null;
+        this.zoomCtx = null;
     }
 }

@@ -16,3 +16,16 @@ export const PARAMETERS = {
         }
     }
 }
+
+// const PARAMETERS = {
+//     DitheringModel : {
+//         colorNb: {
+//             type: 'f32',
+//             value: 2,
+//             minValue: 2,
+//             maxValue: 20,
+//             controllerType: 'range'
+            
+//         }
+//     }
+// }

@@ -1,16 +1,34 @@
-import { TYPE_SIZE, getUniformBufferSize } from './utils.js'
+import { TYPE_SIZE, getUniformBufferSize, TYPE_ATTRIBUTE_FORMAT } from './utils.js'
 
-// class WGPUBuffer {
-//     // TODO
-// }
+class WGPUBuffer {
+    constructor(device) {
+        this.device = device;
+        this.bufferObject = null;
+        this.buffer = null;
+    }
 
-class UniformBuffer /*extends WGPUBuffer*/ {
+    getBuffer() { return this.buffer }
+    getBufferObject() { return this.bufferObject }
+
+    apply(bufferOffset=0) {
+        try {
+            if (this.bufferObject === null || this.buffer === null) {
+                throw new Error("buffer object or buffer isn't defined.");
+            }
+            this.device.queue.writeBuffer(this.bufferObject, bufferOffset, this.buffer);
+        } catch (e) {
+            console.log(e)
+        }
+    }
+}
+
+class UniformBuffer extends WGPUBuffer {
     constructor(device, buffer, subarraysMap) {
-        this.bufferObject = device.createBuffer({
+        super(device);
+        this.bufferObject = this.device.createBuffer({
             size: getUniformBufferSize(buffer.byteLength),
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, // TODO add flag selection on builder
         })
-
         this.buffer = buffer
         this.subarraysMap = subarraysMap
     }
@@ -19,21 +37,20 @@ class UniformBuffer /*extends WGPUBuffer*/ {
         return this.subarraysMap.get(k)
     }
     set(k, v) {
-        const subarray = this.subarraysMap.get(k)
-        if (!subarray) throw new Error(`Uniform ${k} not found.`)
-        if (subarray.length == 1) {
-            subarray[0] = v
-            return
+        try {
+            const subarray = this.subarraysMap.get(k)
+            if (!subarray) throw new Error(`Uniform ${k} not found.`)
+            if (subarray.length == 1) {
+                subarray[0] = v
+                return this
+            }
+            for (let i = 0; i < v.length; i++) {
+                subarray[i] = v[i]
+            }
+            return this
+        } catch (e) {
+            console.log(e)
         }
-        for (let i = 0; i < v.length; i++) {
-            subarray[i] = v[i]
-        }
-    }
-    getBuffer() {
-        return this.buffer
-    }
-    getBufferObject() {
-        return this.bufferObject
     }
     update(k, v) {
         this.uniforms[k].value = v
@@ -42,6 +59,62 @@ class UniformBuffer /*extends WGPUBuffer*/ {
     size() {
         return this.size()
     }
+
+}
+
+
+class VertexBuffer extends WGPUBuffer {
+    constructor(device, buffer, attributesInfo) {
+        super(device);
+        this.attributes = []
+        let offset = 0;
+        for (let [k, v] of attributesInfo) {
+            this.attributes.push({
+                shaderLocation: k,
+                offset,
+                format: TYPE_ATTRIBUTE_FORMAT[v]    
+            })
+            offset += TYPE_SIZE[v];
+        }
+        this.stride = offset;
+
+        this.bufferObject = this.device.createBuffer({
+            label: 'vb',
+            size: buffer.byteLength, // TODO deal with other type of arrays + empty / undefined buffer
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+        })
+        this.buffer = buffer
+    }
+
+    getStride() { return this.stride; }
+    getAttributes() { return this.attributes; }
+}
+
+export class VertexBufferBuilder {
+    constructor(device) {
+        this.attributes = new Map();
+        this.device = device;
+    }
+
+    reset() {
+        this.attributes.clear();
+    }
+
+    bindBufferData(data) {
+        this.buffer = data;
+        return this;
+    }
+
+    addAttribute(info) {
+        this.attributes.set(info.location, info.type);
+        return this;
+    }
+
+    build() {
+        const attributesSorted = new Map([...this.attributes.entries()].sort());       
+        this.reset();
+        return new VertexBuffer(this.device, this.buffer, attributesSorted)
+    }
 }
 
 export class UniformBufferBuilder {
@@ -49,6 +122,11 @@ export class UniformBufferBuilder {
         this.size = 0
         this.uniforms = new Map()
         this.device = device
+    }
+
+    reset() {
+        this.size = 0;
+        this.uniforms.clear();
     }
 
     add(info) {
@@ -67,6 +145,7 @@ export class UniformBufferBuilder {
             const subarray = uniformValues.subarray(v.offset, v.offset + v.size)
             subarraysMap.set(k, subarray)
         }
+        this.reset();
         return new UniformBuffer(this.device, uniformValues, subarraysMap)
     }
 }

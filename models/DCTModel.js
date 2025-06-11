@@ -7,15 +7,14 @@ export class DCTModel extends RenderModel {
     }
 
     async loadAsset() {
-        await this.addTexture('texture-input', '../assets/rose.jpg')
+        await this.addTexture('texture-input', IMAGE_URL)
         await this.addShaderModule('dct1', '../shaders/DCT1.wgsl')
         await this.addShaderModule('dct2', '../shaders/DCT2.wgsl')
         await this.addShaderModule('dct3', '../shaders/DCT3.wgsl')
     }
 
     createResources() {
-        const bufferBuilder = new UniformBufferBuilder(this.device)
-        this.uniformBuffer = bufferBuilder
+        this.uniformBuffer = this.uniformBufferBuilder
             .add({ name: 'resolution', type: 'vec2' })
             .build()
 
@@ -219,11 +218,6 @@ export class DCTModel extends RenderModel {
 
         const commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])
-    }
-
-    async init() {
-        await this.loadAsset()
-        this.createResources()
     }
 
     addControllers() {

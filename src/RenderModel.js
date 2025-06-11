@@ -1,6 +1,7 @@
-import { getRendererContextInstance } from './RenderContext.js'
-import { loadImageBitmap, loadWGSL } from './utils.js'
+import { VertexBufferBuilder, UniformBufferBuilder } from './Buffer.js';
+import { loadImageBitmap, loadWGSL, replaceAsync } from './utils.js'
 
+const ZOOM_FACTOR = 2.0;
 export class RenderModel {
     constructor(device, renderCtx) {
         this.renderCtx = renderCtx;
@@ -9,6 +10,90 @@ export class RenderModel {
         this.shaderModules = new Map()
         this.textures = new Map()
         this._pipelineObject = null
+
+        this.uniformBufferBuilder = new UniformBufferBuilder(this.device)
+        this.vertexBufferBuilder = new VertexBufferBuilder(this.device);
+    }
+
+    async initBlit() {
+        const canvas = this.renderCtx.getCanvas();
+        this.renderTexture = this.device.createTexture({
+            size: [canvas.width, canvas.height],
+            format: this.renderCtx.getFormat(),
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
+        });
+
+        await this.addShaderModule('blit', './shaders/blit.wgsl')
+        this.blitPipeline = this.device.createRenderPipeline({
+            layout: 'auto',
+            vertex: {
+                module: this.shaderModules['blit'],
+                entryPoint: 'vs'
+            },
+            fragment: {
+                module: this.shaderModules['blit'],
+                entryPoint: 'fs',
+                targets: [{format: this.renderCtx.getFormat()}]
+            }
+        })
+        this.blitBindGroup = this.device.createBindGroup({
+            layout: this.blitPipeline.getBindGroupLayout(0),
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.device.createSampler({}),
+                },
+                {
+                    binding: 1,
+                    resource: this.renderTexture.createView(),
+                },
+            ],
+        });
+
+        // for zoom
+        await this.addShaderModule('zoom', './shaders/zoom.wgsl')
+        this.zoomPipeline = this.device.createRenderPipeline({
+            layout: 'auto',
+            vertex: {
+                module: this.shaderModules['zoom'],
+                entryPoint: 'vs'
+            },
+            fragment: {
+                module: this.shaderModules['zoom'],
+                entryPoint: 'fs',
+                targets: [{format: this.renderCtx.getFormat()}]
+            }
+        })
+
+    }
+
+    async initZoom() {
+        const canvas = this.renderCtx.getZoomCanvas();
+        if (!canvas) return;
+
+        this.zoomParamsBuffer = this.device.createBuffer({
+            size: 24,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        this.zoomBindGroup = this.device.createBindGroup({
+            layout: this.zoomPipeline.getBindGroupLayout(0),
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.renderCtx.getSampler(),
+                },
+                {
+                    binding: 1,
+                    resource: this.renderTexture.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: { buffer: this.zoomParamsBuffer },
+                },
+
+            ],
+        });
     }
 
     async loadAsset() {
@@ -19,12 +104,15 @@ export class RenderModel {
         await this.createResources()
     }
 
-    createResources() {
-        throw new Error('createResources() must be implemented by subclass')
+    async init() {
+        await this.initBlit()
+        await this.loadAsset()
+        this.createResources()
+        this.addControls()
     }
-    updateUniforms(...args) {
-        throw new Error('updateUniforms() must be implemented by subclass')
-    }
+
+    createResources() {}
+    updateUniforms(...args) {}
     // encodeRenderPass() { throw new Error("encodeRenderPass() must be implemented by subclass"); }
     render() {
         throw new Error('render() must be implemented by subclass')
@@ -33,7 +121,6 @@ export class RenderModel {
         // <label>PNG file: <input type="file" id="image_input" accept="image/png" id="load-image"></label>
         const container = document.getElementById("controller");
         const fileLabel = document.createElement("label");
-        console.log(container)
         fileLabel.textContent = "PNG file: "
         const input = document.createElement("input")
         input.type = "file"
@@ -106,27 +193,12 @@ export class RenderModel {
             if (this.shaderModules.has(name))
                 throw new Error('shader name already exists')
 
-            var shaderSrc = await loadWGSL(path)
-
-// from here https://stackoverflow.com/questions/33631041/javascript-async-await-in-replace
-        async function replaceAsync(str, regex, asyncFn) {
-    const promises = [];
-    str.replace(regex, (full, ...args) => {
-        promises.push(asyncFn(full, ...args));
-        return full;
-    });
-    const data = await Promise.all(promises);
-    return str.replace(regex, () => data.shift());
-}
-
- 
-            var shaderSrc = await replaceAsync(shaderSrc, /#include\s+"(.*?)"/g, async (_, path)=> await loadWGSL(path));
-            // shaderSrc.replace(/#include\s+"(.*?)"/g => "test");
-
+            let shaderSrc = await loadWGSL(path)
+            let shaderSrcReplaced = await replaceAsync(shaderSrc, /#include\s+"(.*?)"/g, async (_, path)=> await loadWGSL(path));
 
             const module = this.device.createShaderModule({
                 label: name,
-                code: shaderSrc,
+                code: shaderSrcReplaced,
             })
             this.shaderModules[name] = module
             return module
@@ -140,7 +212,6 @@ export class RenderModel {
         if (oldTexture && typeof oldTexture.destroy === 'function') {
             oldTexture.destroy()
         }
-        console.log(this)
         await this.addTexture(name, bitmap, (format = 'rgba8unorm'))
     }
 
@@ -181,6 +252,26 @@ export class RenderModel {
         return texture
     }
 
+    swapFramebuffer(encoder) {
+        const swapChainPass = encoder.beginRenderPass({
+            colorAttachments: [
+                {
+                    view: this.renderCtx.getView(), 
+                    loadOp: 'clear',
+                    storeOp: 'store',
+                    clearValue: [0, 0, 0, 1],
+                },
+            ],
+        });
+    
+        swapChainPass.setPipeline(this.blitPipeline);
+        swapChainPass.setBindGroup(0, this.blitBindGroup);
+        swapChainPass.draw(6);
+        swapChainPass.end();
+    
+        this.device.queue.submit([encoder.finish()]);
+    }
+
     destroy() {
         // Destroy texture
         this.textures.forEach((texture) => {
@@ -192,7 +283,34 @@ export class RenderModel {
         controllers.innerHTML = "";
 
         // this.device.queue
+    }
 
+    renderZoom(mouseX, mouseY, canvasWidth, canvasHeight) {
+        this.device.queue.writeBuffer(
+            this.zoomParamsBuffer,
+            0,
+            new Float32Array([mouseX / canvasWidth, mouseY / canvasHeight, ZOOM_FACTOR, canvasWidth, canvasHeight])
+        );
 
+        const encoder = this.device.createCommandEncoder({ label: 'zoom' })
+        const pass = encoder.beginRenderPass({
+            label: 'nique',
+            colorAttachments: [
+                {
+                    view: this.renderCtx.getZoomView(),
+                    clearValue: [1.0, 1.0, 1.0, 1],
+                    loadOp: 'clear',
+                    storeOp: 'store',
+                },
+            ],
+        })
+        pass.setPipeline(this.zoomPipeline)
+        pass.setBindGroup(0, this.zoomBindGroup)
+        pass.setVertexBuffer(0, this.vertexBuffer.getBufferObject());
+        pass.draw(6)
+        pass.end()
+
+        const commandBuffer = encoder.finish();
+        this.device.queue.submit([commandBuffer]);
     }
 }

@@ -7,7 +7,7 @@ export class ComputeDCTModel extends RenderModel {
     }
 
     async loadAsset() {
-        await this.addTexture('texture-input', './assets/rose.jpg')
+        await this.addTexture('texture-input', IMAGE_URL)
         await this.addShaderModule('dct1', './shaders/DCTcompute.wgsl')
     }
 
@@ -15,8 +15,7 @@ export class ComputeDCTModel extends RenderModel {
         const canvas = document.getElementById('gfx')
         const context = canvas.getContext('webgpu')
 
-        const bufferBuilder = new UniformBufferBuilder(this.device)
-        this.uniformBuffer = bufferBuilder
+        this.uniformBuffer = this.uniformBufferBuilder
             .add({ name: 'resolution', type: 'vec2' })
             .add({ name: 'frequence', type: 'f32' })
             .build()
@@ -101,12 +100,6 @@ export class ComputeDCTModel extends RenderModel {
                 targets: [{ format: this.renderCtx.getFormat() }],
             },
         })
-    }
-
-    async init() {
-        await this.loadAsset()
-        await this.createResources()
-        this.addControls();
     }
 
     updateUniforms(freq = 8) {
