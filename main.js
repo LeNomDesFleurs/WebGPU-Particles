@@ -9,7 +9,7 @@ let CURRENT_MODEL;
 let renderContext;
 
 async function initDefaultModel(renderContext) {
-    CURRENT_MODEL = new ComputeDCTModel(
+    CURRENT_MODEL = new PixelSortingModel(
         renderContext.getDevice(),
         renderContext
     )

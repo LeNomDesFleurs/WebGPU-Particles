@@ -5,18 +5,45 @@ import { loadImageBitmap } from '../src/utils.js'
 
 var IMAGE_URL = '../assets/rose.jpg'
 
+const VERTEX_DATA = new Float32Array([
+    -1.0,
+    -1.0,
+    0.0,
+    0.0, // center
+    1.0,
+    -1.0,
+    1.0,
+    0.0, // right, center
+    -1.0,
+    1.0,
+    0.0,
+    1.0, // center, top
 
+    // 2nd triangle
+    -1.0,
+    1.0,
+    0.0,
+    1.0, // center, top
+    1.0,
+    -1.0,
+    1.0,
+    0.0, // right, center
+    1.0,
+    1.0,
+    1.0,
+    1.0, // right, top
+])
 
 export class PixelSortingModel extends RenderModel {
-
-
     async loadAsset() {
         const source = await this.addTexture('texture-input', IMAGE_URL)
         var size = { width: source.width, height: source.height }
-        await this.addStorage('mask', 'r32sint', size);
-        await this.addStorage('sortvalues', 'r32float', size);
-        await this.addStorage('spanlenghts', 'r32uint', size);
-        await this.addShaderModule('sorting', '../shaders/sorting.wgsl');
+        await this.addTexture('temp', IMAGE_URL)
+        await this.addStorage('mask', 'r32sint', size)
+        await this.addStorage('sortvalues', 'r32float', size)
+        await this.addStorage('spanlenghts', 'r32uint', size)
+        await this.addShaderModule('sorting', '../shaders/sorting.wgsl')
+        await this.addShaderModule('rotation', '../shaders/rotation.wgsl')
     }
 
     createResources() {
@@ -31,6 +58,13 @@ export class PixelSortingModel extends RenderModel {
             .add({ name: 'ReverseSorting', type: 'f32' })
             .add({ name: 'SortedGamma', type: 'f32' })
             .build()
+
+        this.vertexBuffer = this.vertexBufferBuilder
+            .bindBufferData(VERTEX_DATA)
+            .addAttribute({ location: 0, type: 'vec2f' })
+            .addAttribute({ location: 1, type: 'vec2f' })
+            .build()
+        this.vertexBuffer.apply() // TODO find a smoother way
 
         // --------------------------- BIND GROUP
         const bindGroupLayout = this.device.createBindGroupLayout({
@@ -93,10 +127,62 @@ export class PixelSortingModel extends RenderModel {
             ],
         })
 
+        const rotationGroupLayout = this.device.createBindGroupLayout({
+            label: 'rotationBindGroup',
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: {
+                        type: 'uniform',
+                        hasDynamicOffset: false,
+                    },
+                },
+                {
+                    binding: 1,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    sampler: { type: 'non-filtering' },
+                },
+                {
+                    binding: 2,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {
+                        sampleType: 'unfilterable-float',
+                        viewDimension: '2d',
+                        multisampled: false,
+                    },
+                },
+            ],
+        })
+
+        this.rotationlayout = rotationGroupLayout
+
         this.layout = bindGroupLayout
+
+        const rotationPipelineLayout = this.device.createPipelineLayout({
+            bindGroupLayouts: [rotationGroupLayout],
+        })
 
         const pipelineLayout = this.device.createPipelineLayout({
             bindGroupLayouts: [bindGroupLayout],
+        })
+
+        this.RotationPipeline = this.device.createRenderPipeline({
+            label: 'rotationPipeline',
+            layout: rotationPipelineLayout,
+            vertex: {
+                module: this.shaderModules['rotation'],
+                buffers: [
+                    {
+                        arrayStride: this.vertexBuffer.getStride(),
+                        attributes: this.vertexBuffer.getAttributes(),
+                    },
+                ],
+            },
+            fragment: {
+                module: this.shaderModules['rotation'],
+                targets: [{ format: 'rgba8unorm' }],
+            },
         })
 
         this.createMaskPipeline = this.device.createComputePipeline({
@@ -261,7 +347,7 @@ export class PixelSortingModel extends RenderModel {
         const outputTexture = context.getCurrentTexture()
 
         this.updateUniforms()
-        var buffer = this.uniformBuffer
+        var buffer = this.uniformBuffer;
 
         const bindGroup = this.device.createBindGroup({
             label: 'sorting buffer',
@@ -273,7 +359,7 @@ export class PixelSortingModel extends RenderModel {
                 },
                 {
                     binding: 1,
-                    resource: this.textures['texture-input'].createView(),
+                    resource: this.textures['temp'].createView(),
                 },
                 {
                     binding: 2,
@@ -293,10 +379,60 @@ export class PixelSortingModel extends RenderModel {
                 },
             ],
         })
+        
+        const rotationBindgroup = this.device.createBindGroup({
+            label: 'rotation buffer',
+            layout: this.rotationlayout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: { buffer: buffer.getBufferObject() },
+                },
+                {
+                    binding: 1,
+                    resource: this.renderCtx.getSampler(),
+                },
+                {
+                    binding: 2,
+                    resource: this.textures['texture-input'].createView(),
+                },
+            ],
+        })
 
         const encoder = this.device.createCommandEncoder({ label: 'sorting' })
 
-        const pass = encoder.beginComputePass()
+        // const encoder = this.device.createCommandEncoder({ label: 'dithering' })
+        // this.updateUniforms()
+
+        var pass = encoder.beginRenderPass({
+            label: 'rotation',
+            colorAttachments: [
+                {
+                    view: this.textures['temp'].createView(),
+                    clearValue: [1.0, 1.0, 1.0, 1],
+                    loadOp: 'clear',
+                    storeOp: 'store',
+                },
+            ],
+        })
+        pass.setPipeline(this.RotationPipeline)
+        pass.setBindGroup(0, rotationBindgroup)
+        pass.setVertexBuffer(0, this.vertexBuffer.getBufferObject())
+        pass.draw(6)
+        pass.end()
+
+        // this.swapFramebuffer(encoder);
+
+        // pass = encoder.beginRenderPass();
+
+        // // pass.
+        // pass.setBindGroup(0, bindGroup)
+
+        // pass.end();
+        // commandBuffer = encoder.finish;
+        // this.device.queue.submit([commandBuffer])
+
+        pass = encoder.beginComputePass()
 
         // let width = canvas.width;
         let width = this.textures['texture-input'].width
@@ -315,12 +451,12 @@ export class PixelSortingModel extends RenderModel {
         // pass.setPipeline(this.visualizePipeline)
         // pass.dispatchWorkgroups(width, height);
         pass.setPipeline(this.pixelsortPipeline)
-        pass.dispatchWorkgroups(width , height)
+        pass.dispatchWorkgroups(width, height)
         // pass.setPipeline(compositePipeline)
         // pass.dispatchWorkgroups(width / 8, height / 8);
         pass.end()
 
-        const commandBuffer = encoder.finish()
+        var commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])
     }
 }
