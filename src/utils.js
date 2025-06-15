@@ -10,7 +10,8 @@ export const state = {
 	MaskRandomOffset:0.0,
 	SortBy:0.0,
 	ReverseSorting: 0.0,
-	SortedGamma:1.0,
+	SortedGamma: 1.0,
+	angle: 0.0,
 }
 
 export const CANVAS_ID = 'gfx';
@@ -22,7 +23,8 @@ export const TYPE_SIZE = {
 	'vec4' : 16,
 	'vec2f' : 8,
 	'vec3f' : 12,
-	'mat3'  : 36,
+	// 'mat3'  : 36,//Quick fix to account for padding
+	'mat3' : 36,
 	'mat4' : 64,
 	'u32' : 4,
 	'vec2u' : 8,

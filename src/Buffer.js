@@ -52,6 +52,7 @@ class UniformBuffer extends WGPUBuffer {
             console.log(e)
         }
     }
+    
     update(k, v) {
         this.uniforms[k].value = v
     }
