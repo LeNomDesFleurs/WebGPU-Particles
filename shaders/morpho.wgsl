@@ -4,7 +4,12 @@ struct Uniforms {
     resolution: vec2f,
     op:i32,// op 1:   0: neutral  1: dilatation   2 : erosion
     r:f32,
-    brush_type:i32,// brush:  0: disk 1:  star  2: diamond  3: square 
+    brush_type:i32,
+    // brush:  
+    //0: disk 
+    //1: star  
+    //2: diamond  
+    //3: square 
     p:f32,
 };
 
@@ -36,16 +41,25 @@ fn vs(vert: Vertex, @builtin(vertex_index) vertexIndex : u32) -> OurVertexShader
 
 fn brush(d:vec2f) -> bool {   
     var b:vec2f = abs(d);
-    if (uniforms.brush_type == 0){
-       return dot(b,b) <= uniforms.r*uniforms.r;
-    } else if (uniforms.brush_type == 1){
-        return pow(b.x,uniforms.p)+pow(b.y,uniforms.p) <= pow(uniforms.r,uniforms.p);
-    } else if (uniforms.brush_type == 2){
-        return b.x+b.y < uniforms.r ;
-    } else {
-        return max(b.x,b.x*.5+b.y*.87) < uniforms.r;
+    var morpho:bool=false;
+    switch (uniforms.brush_type){
+        case 0:{
+        morpho= dot(b,b) <= uniforms.r*uniforms.r;
+        }
+        case 1:{
+        morpho= pow(b.x,uniforms.p)+pow(b.y,uniforms.p) <= pow(uniforms.r,uniforms.p);
+        }
+        case 2:{
+        morpho= ((b.x+b.y) < uniforms.r);
+        }
+        case 3:{
+        morpho= (max(b.x,b.x*.5+b.y*.87) < uniforms.r);
+        }
+        default:{
+        morpho= false;
+        }
     }
-
+    return morpho;
 }
 
 
@@ -59,7 +73,7 @@ fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
 
   var R:vec2f = uniforms.resolution;
 
-    var m:vec4f=vec4(1e9);
+    var m:vec4f=vec4f(1e9);
     var M:vec4f=-m;
 
 	for (var y:f32 = -uniforms.r; y<=uniforms.r; y=y+1.0){
@@ -67,15 +81,11 @@ fn fs(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
         var d:vec2f=vec2f(x,y);
           if (brush(d)) {
               var t:vec4f = textureSample(ourTexture, ourSampler, fragCoord + (d/uniforms.resolution) );
-              m = min(m,t); M = max(M,t);
+              m = min(m,t);
+              M = max(M,t);
           }
     }}
-    if(uniforms.op==1) 
-    {
-    output = M;
-    } else {                 // dilatation
-    output = m;
-    }                 // erosion
+    output = select(m, M, uniforms.op == 0);
 
     return output;
 }

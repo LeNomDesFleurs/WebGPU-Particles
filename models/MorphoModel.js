@@ -110,6 +110,11 @@ export class MorphoModel extends RenderModel {
 
     updateUniforms(...args) {
         const canvasSize = this.renderCtx.getCanvasSize()
+        // console.log(state.op);
+        // console.log(state.r);
+        console.log(state.brush_type);
+        // console.log(state.p);
+
         this.uniformBuffer
             .set('resolution', canvasSize)
             .set('op', state.op)
@@ -126,7 +131,7 @@ export class MorphoModel extends RenderModel {
                 type: 'radio',
                 id: 'op',
                 label: 'op',
-               options: [0, 1, 2],
+               options: [0, 1],
                 default: 2,
                 handler: (v) => (state.op = v),
             },
@@ -136,16 +141,18 @@ export class MorphoModel extends RenderModel {
                 label: 'r',
                 min: 0,
                 max: 255,
-                value: 255,
+                value: 100,
                 step: 1,
-                handler: (v) => (state.r = v / 32.0),
+                handler: (v) => (state.r = (v+32) / 16.0),
             },
             {
-                type: 'radio',
+                type: 'range',
                 id: 'brush_type',
                 label: 'brush_type',
-                options: [0, 1, 2, 3],
-                default: 1,
+                min: 0,
+                max: 3,
+                value: 1,
+                step: 1,
                 handler: (v) => (state.brush_type = v),
             },
             {
@@ -154,7 +161,7 @@ export class MorphoModel extends RenderModel {
                 label: 'p',
                  min: 0,
                 max: 1000,
-                value: 1000,
+                value: 500,
                 step: 1,
                 handler: (v) => (state.p = v / 1000.0),
             },
