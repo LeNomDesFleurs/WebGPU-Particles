@@ -1,15 +1,16 @@
 import { ComputeDCTModel } from './models/ComputeDCTModel.js'
 import { DitheringModel } from './models/DitheringModel.js'
 import { PixelSortingModel } from './models/PixelSortingModel.js'
+import { MorphoModel } from './models/MorphoModel.js'
 import { getRendererContextInstance } from './src/RenderContext.js'
 import { state } from './src/utils.js'
 
-const MODELS = [ComputeDCTModel, DitheringModel, PixelSortingModel];
+const MODELS = [ComputeDCTModel, DitheringModel, PixelSortingModel, MorphoModel];
 let CURRENT_MODEL;
 let renderContext;
 
 async function initDefaultModel(renderContext) {
-    CURRENT_MODEL = new PixelSortingModel(
+    CURRENT_MODEL = new MorphoModel(
         renderContext.getDevice(),
         renderContext
     )

@@ -539,39 +539,22 @@ export class PixelSortingModel extends RenderModel {
         pass.draw(6)
         pass.end()
 
-        // this.swapFramebuffer(encoder);
-
-        // pass = encoder.beginRenderPass();
-
-        // // pass.
-        // pass.setBindGroup(0, bindGroup)
-
-        // pass.end();
-        // commandBuffer = encoder.finish;
-        // this.device.queue.submit([commandBuffer])
+     
 
         pass = encoder.beginComputePass()
 
-        // let width = canvas.width;
         let width = this.textures['texture-input'].width
-        // let height = canvas.height;
         let height = this.textures['texture-input'].height
 
         pass.setBindGroup(0, bindGroup)
         pass.setPipeline(this.createMaskPipeline)
         pass.dispatchWorkgroups(width / 8, height / 8)
-        // pass.setPipeline(createsortvaluePipeline)
-        // pass.dispatchWorkgroups(width / 8, height / 8);
-        // pass.setPipeline(clearbufferPipeline)
-        // pass.dispatchWorkgroups(width / 8, height / 8);
         pass.setPipeline(this.identifyspanPipeline)
         pass.dispatchWorkgroups(width / 8, height / 8)
         // pass.setPipeline(this.visualizePipeline)
         // pass.dispatchWorkgroups(width, height);
         pass.setPipeline(this.pixelsortPipeline)
         pass.dispatchWorkgroups(width, height)
-        // pass.setPipeline(compositePipeline)
-        // pass.dispatchWorkgroups(width / 8, height / 8);
         pass.end()
 
         var commandBuffer = encoder.finish()

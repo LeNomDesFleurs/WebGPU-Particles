@@ -17,7 +17,8 @@ export const state = {
 export const CANVAS_ID = 'gfx';
 
 export const TYPE_SIZE = {
-	'f32' : 4,
+	'f32': 4,
+	'i32': 4,
 	'vec2' : 8,
 	'vec3' : 12,
 	'vec4' : 16,
