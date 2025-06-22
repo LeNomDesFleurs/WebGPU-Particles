@@ -12,6 +12,12 @@ export const state = {
 	ReverseSorting: 0.0,
 	SortedGamma: 1.0,
 	angle: 0.0,
+	//morpho
+	op: 0,
+	r: 4,
+	brush_type: 0,
+	p: 0.3,
+      
 }
 
 export const CANVAS_ID = 'gfx';
