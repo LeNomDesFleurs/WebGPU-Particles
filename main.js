@@ -8,6 +8,8 @@ import { state } from './src/utils.js'
 const MODELS = [ComputeDCTModel, DitheringModel, PixelSortingModel, MorphoModel];
 let CURRENT_MODEL;
 let renderContext;
+let renderDonePromise;
+
 
 async function initDefaultModel(renderContext) {
     CURRENT_MODEL = new MorphoModel(
@@ -97,6 +99,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById('download').addEventListener('click', function (e) {
+        handeDownload();
+    })
+
+    async function handeDownload() { 
+        if (renderDonePromise) {
+        await renderDonePromise; // Wait for GPU rendering to complete
+        }
         let canvas = document.getElementById('gfx')
         let canvasUrl = canvas.toDataURL('image/jpeg', 0.5)
         const createEl = document.createElement('a')
@@ -104,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         createEl.download = 'download-this-canvas'
         createEl.click()
         createEl.remove()
-    })
+    }
 
 });
 

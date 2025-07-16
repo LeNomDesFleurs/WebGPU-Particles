@@ -133,6 +133,8 @@ export class ComputeDCTModel extends RenderModel {
 
         const commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])
+        renderDonePromise = device.queue.onSubmittedWorkDone();
+
     }
 
     addControllers() {

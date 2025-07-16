@@ -193,5 +193,7 @@ export class MorphoModel extends RenderModel {
         pass.end()
 
         this.swapFramebuffer(encoder);
+        renderDonePromise = device.queue.onSubmittedWorkDone();
+
     }
 }

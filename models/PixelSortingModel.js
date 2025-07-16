@@ -559,6 +559,7 @@ export class PixelSortingModel extends RenderModel {
 
         var commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])
+        renderDonePromise = device.queue.onSubmittedWorkDone();
 
     }
 }
