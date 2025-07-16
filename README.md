@@ -35,6 +35,7 @@ Experimenting with particle systems in web-GPU
 - [ ] Uniform generator
 - [ ] keyboard shortcut interaction
 - [x] shader preprocessor (include)
+- [ ] Going from compute to fragment breaks the canvas texture
 - [ ] chain shaders
 - [ ] preview original
 - [ ] Half res preview option

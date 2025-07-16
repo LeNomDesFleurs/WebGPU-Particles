@@ -1,19 +1,36 @@
 import { UniformBufferBuilder } from '../src/Buffer.js'
 import { RenderModel } from '../src/RenderModel.js'
-import { state } from '../src/utils.js'
+import { state, IMAGE_URL, setRenderDonePromise } from '../src/utils.js'
 
-var IMAGE_URL = '../assets/rose.jpg'
-let DITHERING_SHADER_PATH = './shaders/morpho.wgsl'
+let MORPHO_SHADER_PATH = './shaders/morpho.wgsl'
 
 const VERTEX_DATA = new Float32Array([
-     -1.0, -1.0, 0.0,  0.0,  // center
-    1.0, -1.0, 1.0,  0.0,  // right, center
-    -1.0, 1.0, 0.0,  1.0,  // center, top
+    -1.0,
+    -1.0,
+    0.0,
+    0.0, // center
+    1.0,
+    -1.0,
+    1.0,
+    0.0, // right, center
+    -1.0,
+    1.0,
+    0.0,
+    1.0, // center, top
 
     // 2nd triangle
-    -1.0, 1.0, 0.0,  1.0,  // center, top
-     1.0, -1.0, 1.0,  0.0,  // right, center
-     1.0, 1.0, 1.0,  1.0,  // right, top
+    -1.0,
+    1.0,
+    0.0,
+    1.0, // center, top
+    1.0,
+    -1.0,
+    1.0,
+    0.0, // right, center
+    1.0,
+    1.0,
+    1.0,
+    1.0, // right, top
 ])
 
 export class MorphoModel extends RenderModel {
@@ -23,7 +40,7 @@ export class MorphoModel extends RenderModel {
 
     async loadAsset() {
         await this.addTexture('texture-input', IMAGE_URL)
-        await this.addShaderModule('dithering', DITHERING_SHADER_PATH)
+        await this.addShaderModule('morpho', MORPHO_SHADER_PATH)
     }
 
     createResources() {
@@ -37,11 +54,11 @@ export class MorphoModel extends RenderModel {
 
         this.vertexBuffer = this.vertexBufferBuilder
             .bindBufferData(VERTEX_DATA)
-            .addAttribute({ location: 0, type: 'vec2f'})
-            .addAttribute({ location: 1, type: 'vec2f'})
-            .build();
+            .addAttribute({ location: 0, type: 'vec2f' })
+            .addAttribute({ location: 1, type: 'vec2f' })
+            .build()
         this.vertexBuffer.apply() // TODO find a smoother way
-    
+
         const bindGroupLayout = this.device.createBindGroupLayout({
             entries: [
                 {
@@ -74,7 +91,7 @@ export class MorphoModel extends RenderModel {
         })
 
         this.bindGroup = this.device.createBindGroup({
-            label: 'dithering-bindgroup',
+            label: 'morpho-bindgroup',
             layout: bindGroupLayout,
             entries: [
                 {
@@ -90,19 +107,19 @@ export class MorphoModel extends RenderModel {
         })
 
         this.pipeline = this.device.createRenderPipeline({
-            label: 'dithering-pipeline',
+            label: 'morpho-pipeline',
             layout: pipelineLayout,
-            vertex: { 
-                module: this.shaderModules['dithering'],
+            vertex: {
+                module: this.shaderModules['morpho'],
                 buffers: [
                     {
                         arrayStride: this.vertexBuffer.getStride(),
-                        attributes: this.vertexBuffer.getAttributes()
-                    }
+                        attributes: this.vertexBuffer.getAttributes(),
+                    },
                 ],
             },
             fragment: {
-                module: this.shaderModules['dithering'],
+                module: this.shaderModules['morpho'],
                 targets: [{ format: this.renderCtx.getFormat() }],
             },
         })
@@ -112,7 +129,7 @@ export class MorphoModel extends RenderModel {
         const canvasSize = this.renderCtx.getCanvasSize()
         // console.log(state.op);
         // console.log(state.r);
-        console.log(state.brush_type);
+        console.log(state.brush_type)
         // console.log(state.p);
 
         this.uniformBuffer
@@ -121,7 +138,7 @@ export class MorphoModel extends RenderModel {
             .set('r', state.r)
             .set('brush_type', state.brush_type)
             .set('p', state.p)
-            .apply();
+            .apply()
     }
 
     addControls() {
@@ -131,7 +148,7 @@ export class MorphoModel extends RenderModel {
                 type: 'radio',
                 id: 'op',
                 label: 'op',
-               options: [0, 1],
+                options: [0, 1],
                 default: 2,
                 handler: (v) => (state.op = v),
             },
@@ -143,7 +160,7 @@ export class MorphoModel extends RenderModel {
                 max: 255,
                 value: 100,
                 step: 1,
-                handler: (v) => (state.r = (v+32) / 16.0),
+                handler: (v) => (state.r = (v + 32) / 16.0),
             },
             {
                 type: 'range',
@@ -159,7 +176,7 @@ export class MorphoModel extends RenderModel {
                 type: 'range',
                 name: 'p',
                 label: 'p',
-                 min: 0,
+                min: 0,
                 max: 1000,
                 value: 500,
                 step: 1,
@@ -168,15 +185,14 @@ export class MorphoModel extends RenderModel {
         ]
 
         this.addControllers(controls)
-
     }
 
     render() {
-        const encoder = this.device.createCommandEncoder({ label: 'dithering' })
+        const encoder = this.device.createCommandEncoder({ label: 'morpho' })
         this.updateUniforms()
 
         const pass = encoder.beginRenderPass({
-            label: 'nique',
+            label: 'morpho-encoder',
             colorAttachments: [
                 {
                     view: this.renderTexture.createView(),
@@ -188,12 +204,12 @@ export class MorphoModel extends RenderModel {
         })
         pass.setPipeline(this.pipeline)
         pass.setBindGroup(0, this.bindGroup)
-        pass.setVertexBuffer(0, this.vertexBuffer.getBufferObject());
+        pass.setVertexBuffer(0, this.vertexBuffer.getBufferObject())
         pass.draw(6)
         pass.end()
 
-        this.swapFramebuffer(encoder);
-        renderDonePromise = device.queue.onSubmittedWorkDone();
-
+        this.swapFramebuffer(encoder)
+        let promise = this.device.queue.onSubmittedWorkDone()
+        setRenderDonePromise(promise)
     }
 }

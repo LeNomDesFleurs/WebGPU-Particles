@@ -17,8 +17,20 @@ export const state = {
 	r: 4,
 	brush_type: 0,
 	p: 0.3,
-      
+	
 }
+
+export var IMAGE_URL = '../assets/rose.jpg';
+
+let renderDonePromise;
+export function setRenderDonePromise(promise) {
+  renderDonePromise = promise;
+}
+export function getRenderDonePromise() {
+  return renderDonePromise;
+}
+
+
 
 export const CANVAS_ID = 'gfx';
 

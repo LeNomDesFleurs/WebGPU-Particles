@@ -3,16 +3,15 @@ import { DitheringModel } from './models/DitheringModel.js'
 import { PixelSortingModel } from './models/PixelSortingModel.js'
 import { MorphoModel } from './models/MorphoModel.js'
 import { getRendererContextInstance } from './src/RenderContext.js'
-import { state } from './src/utils.js'
+import { state, getRenderDonePromise } from './src/utils.js'
 
 const MODELS = [ComputeDCTModel, DitheringModel, PixelSortingModel, MorphoModel];
 let CURRENT_MODEL;
 let renderContext;
-let renderDonePromise;
 
 
 async function initDefaultModel(renderContext) {
-    CURRENT_MODEL = new MorphoModel(
+    CURRENT_MODEL = new DitheringModel(
         renderContext.getDevice(),
         renderContext
     )
@@ -97,23 +96,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         })
         modelsContainer.appendChild(button);
     });
-
-    document.getElementById('download').addEventListener('click', function (e) {
-        handeDownload();
-    })
-
-    async function handeDownload() { 
-        if (renderDonePromise) {
-        await renderDonePromise; // Wait for GPU rendering to complete
-        }
-        let canvas = document.getElementById('gfx')
-        let canvasUrl = canvas.toDataURL('image/jpeg', 0.5)
-        const createEl = document.createElement('a')
-        createEl.href = canvasUrl
-        createEl.download = 'download-this-canvas'
-        createEl.click()
-        createEl.remove()
-    }
 
 });
 

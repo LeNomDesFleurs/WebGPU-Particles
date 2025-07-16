@@ -1,7 +1,6 @@
 import { RenderModel } from '../src/RenderModel.js'
 import { UniformBufferBuilder } from '../src/Buffer.js'
-
-var IMAGE_URL = '../assets/rose.jpg'
+import { IMAGE_URL, setRenderDonePromise } from '../src/utils.js'
 
 export class ComputeDCTModel extends RenderModel {
     constructor(device, renderCtx) {
@@ -133,8 +132,8 @@ export class ComputeDCTModel extends RenderModel {
 
         const commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])
-        renderDonePromise = device.queue.onSubmittedWorkDone();
-
+        let promise = this.device.queue.onSubmittedWorkDone();
+        setRenderDonePromise(promise);
     }
 
     addControllers() {

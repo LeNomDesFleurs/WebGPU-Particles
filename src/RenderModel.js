@@ -1,5 +1,5 @@
 import { VertexBufferBuilder, UniformBufferBuilder } from './Buffer.js';
-import { loadImageBitmap, loadWGSL, replaceAsync } from './utils.js'
+import { loadImageBitmap, loadWGSL, replaceAsync, getRenderDonePromise } from './utils.js'
 
 const ZOOM_FACTOR = 2.0;
 export class RenderModel {
@@ -118,6 +118,7 @@ export class RenderModel {
         throw new Error('render() must be implemented by subclass')
     }
     addControls() {
+
         // <label>PNG file: <input type="file" id="image_input" accept="image/png" id="load-image"></label>
         const container = document.getElementById("controller");
         const fileLabel = document.createElement("label");
@@ -137,10 +138,34 @@ export class RenderModel {
         })
         fileLabel.appendChild(input);
         container.appendChild(fileLabel);
-        // throw new Error('addControls() must be implemented by subclass')
-    }
 
-    addControllers(controls = []) {
+        // <button id="download">Download Canvas</button>        
+
+        
+        const DownloadButton = document.createElement("button")
+        DownloadButton.textContent="Download",
+DownloadButton.addEventListener('click', async (event) => {
+    handeDownload();
+})
+container.appendChild(DownloadButton);
+        
+
+async function handeDownload() { 
+        const promise = getRenderDonePromise();        
+        if (promise) {
+        await promise; // Wait for GPU rendering to complete
+    }
+    let canvas = document.getElementById('gfx')
+    let canvasUrl = canvas.toDataURL('image/jpeg', 0.5)
+    const createEl = document.createElement('a')
+    createEl.href = canvasUrl
+    createEl.download = 'Processed Image'
+    createEl.click()
+    createEl.remove()
+}
+}
+
+addControllers(controls = []) {
         const controller = document.getElementById('controller')
 
         controls.forEach((ctrl) => {

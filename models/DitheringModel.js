@@ -1,19 +1,36 @@
 import { UniformBufferBuilder } from '../src/Buffer.js'
 import { RenderModel } from '../src/RenderModel.js'
-import { state } from '../src/utils.js'
+import { state, IMAGE_URL, setRenderDonePromise } from '../src/utils.js'
 
-var IMAGE_URL = '../assets/rose.jpg'
 let DITHERING_SHADER_PATH = './shaders/dithering.wgsl'
 
 const VERTEX_DATA = new Float32Array([
-     -1.0, -1.0, 0.0,  0.0,  // center
-    1.0, -1.0, 1.0,  0.0,  // right, center
-    -1.0, 1.0, 0.0,  1.0,  // center, top
+    -1.0,
+    -1.0,
+    0.0,
+    0.0, // center
+    1.0,
+    -1.0,
+    1.0,
+    0.0, // right, center
+    -1.0,
+    1.0,
+    0.0,
+    1.0, // center, top
 
     // 2nd triangle
-    -1.0, 1.0, 0.0,  1.0,  // center, top
-     1.0, -1.0, 1.0,  0.0,  // right, center
-     1.0, 1.0, 1.0,  1.0,  // right, top
+    -1.0,
+    1.0,
+    0.0,
+    1.0, // center, top
+    1.0,
+    -1.0,
+    1.0,
+    0.0, // right, center
+    1.0,
+    1.0,
+    1.0,
+    1.0, // right, top
 ])
 
 export class DitheringModel extends RenderModel {
@@ -37,11 +54,11 @@ export class DitheringModel extends RenderModel {
 
         this.vertexBuffer = this.vertexBufferBuilder
             .bindBufferData(VERTEX_DATA)
-            .addAttribute({ location: 0, type: 'vec2f'})
-            .addAttribute({ location: 1, type: 'vec2f'})
-            .build();
+            .addAttribute({ location: 0, type: 'vec2f' })
+            .addAttribute({ location: 1, type: 'vec2f' })
+            .build()
         this.vertexBuffer.apply() // TODO find a smoother way
-    
+
         const bindGroupLayout = this.device.createBindGroupLayout({
             entries: [
                 {
@@ -92,13 +109,13 @@ export class DitheringModel extends RenderModel {
         this.pipeline = this.device.createRenderPipeline({
             label: 'dithering-pipeline',
             layout: pipelineLayout,
-            vertex: { 
+            vertex: {
                 module: this.shaderModules['dithering'],
                 buffers: [
                     {
                         arrayStride: this.vertexBuffer.getStride(),
-                        attributes: this.vertexBuffer.getAttributes()
-                    }
+                        attributes: this.vertexBuffer.getAttributes(),
+                    },
                 ],
             },
             fragment: {
@@ -116,7 +133,7 @@ export class DitheringModel extends RenderModel {
             .set('pixelate', state.pixelate)
             .set('dith-str', state.ditherStrength)
             .set('bayer_filter_size', state.bayerFilterSize)
-            .apply();
+            .apply()
     }
 
     addControls() {
@@ -163,7 +180,6 @@ export class DitheringModel extends RenderModel {
         ]
 
         this.addControllers(controls)
-
     }
 
     render() {
@@ -183,10 +199,12 @@ export class DitheringModel extends RenderModel {
         })
         pass.setPipeline(this.pipeline)
         pass.setBindGroup(0, this.bindGroup)
-        pass.setVertexBuffer(0, this.vertexBuffer.getBufferObject());
+        pass.setVertexBuffer(0, this.vertexBuffer.getBufferObject())
         pass.draw(6)
         pass.end()
 
-        this.swapFramebuffer(encoder);
+        this.swapFramebuffer(encoder)
+        let promise = this.device.queue.onSubmittedWorkDone()
+        setRenderDonePromise(promise)
     }
 }

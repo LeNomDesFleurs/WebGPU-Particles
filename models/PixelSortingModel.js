@@ -1,77 +1,65 @@
 import { RenderModel } from '../src/RenderModel.js'
 import { UniformBufferBuilder } from '../src/Buffer.js'
-import { state } from '../src/utils.js'
 import { loadImageBitmap } from '../src/utils.js'
-
+import { state, IMAGE_URL, setRenderDonePromise } from '../src/utils.js'
 
 const mat3 = {
     multiply(a, b) {
-      const a00 = a[0 * 3 + 0];
-      const a01 = a[0 * 3 + 1];
-      const a02 = a[0 * 3 + 2];
-      const a10 = a[1 * 3 + 0];
-      const a11 = a[1 * 3 + 1];
-      const a12 = a[1 * 3 + 2];
-      const a20 = a[2 * 3 + 0];
-      const a21 = a[2 * 3 + 1];
-      const a22 = a[2 * 3 + 2];
-      const b00 = b[0 * 3 + 0];
-      const b01 = b[0 * 3 + 1];
-      const b02 = b[0 * 3 + 2];
-      const b10 = b[1 * 3 + 0];
-      const b11 = b[1 * 3 + 1];
-      const b12 = b[1 * 3 + 2];
-      const b20 = b[2 * 3 + 0];
-      const b21 = b[2 * 3 + 1];
-      const b22 = b[2 * 3 + 2];
-  
-      return [
-        b00 * a00 + b01 * a10 + b02 * a20,
-        b00 * a01 + b01 * a11 + b02 * a21,
-        b00 * a02 + b01 * a12 + b02 * a22,
-        b10 * a00 + b11 * a10 + b12 * a20,
-        b10 * a01 + b11 * a11 + b12 * a21,
-        b10 * a02 + b11 * a12 + b12 * a22,
-        b20 * a00 + b21 * a10 + b22 * a20,
-        b20 * a01 + b21 * a11 + b22 * a21,
-        b20 * a02 + b21 * a12 + b22 * a22,
-      ];
+        const a00 = a[0 * 3 + 0]
+        const a01 = a[0 * 3 + 1]
+        const a02 = a[0 * 3 + 2]
+        const a10 = a[1 * 3 + 0]
+        const a11 = a[1 * 3 + 1]
+        const a12 = a[1 * 3 + 2]
+        const a20 = a[2 * 3 + 0]
+        const a21 = a[2 * 3 + 1]
+        const a22 = a[2 * 3 + 2]
+        const b00 = b[0 * 3 + 0]
+        const b01 = b[0 * 3 + 1]
+        const b02 = b[0 * 3 + 2]
+        const b10 = b[1 * 3 + 0]
+        const b11 = b[1 * 3 + 1]
+        const b12 = b[1 * 3 + 2]
+        const b20 = b[2 * 3 + 0]
+        const b21 = b[2 * 3 + 1]
+        const b22 = b[2 * 3 + 2]
+
+        return [
+            b00 * a00 + b01 * a10 + b02 * a20,
+            b00 * a01 + b01 * a11 + b02 * a21,
+            b00 * a02 + b01 * a12 + b02 * a22,
+            b10 * a00 + b11 * a10 + b12 * a20,
+            b10 * a01 + b11 * a11 + b12 * a21,
+            b10 * a02 + b11 * a12 + b12 * a22,
+            b20 * a00 + b21 * a10 + b22 * a20,
+            b20 * a01 + b21 * a11 + b22 * a21,
+            b20 * a02 + b21 * a12 + b22 * a22,
+        ]
     },
     translation([tx, ty]) {
-      return [
-        1, 0, 0,
-        0, 1, 0,
-        tx, ty, 1,
-      ];
+        return [1, 0, 0, 0, 1, 0, tx, ty, 1]
     },
-  
+
     rotation(angleInRadians) {
-      const c = Math.cos(angleInRadians);
-      const s = Math.sin(angleInRadians);
-      return [
-        c, s, 0,
-        -s, c, 0,
-        0, 0, 1,
-      ];
+        const c = Math.cos(angleInRadians)
+        const s = Math.sin(angleInRadians)
+        return [c, s, 0, -s, c, 0, 0, 0, 1]
     },
-  
+
     scaling([sx, sy]) {
-      return [
-        sx, 0, 0,
-        0, sy, 0,
-        0, 0, 1,
-      ];
+        return [sx, 0, 0, 0, sy, 0, 0, 0, 1]
     },
 
-    rotationScale(radians, width, height) { 
-        const W = width * Math.abs(Math.cos(radians)) + height * Math.abs(Math.sin(radians))
-        const H = width*Math.abs(Math.sin(radians)) + height*Math.abs(Math.cos(radians))
-        return Math.min(width / W, height / H);
+    rotationScale(radians, width, height) {
+        const W =
+            width * Math.abs(Math.cos(radians)) +
+            height * Math.abs(Math.sin(radians))
+        const H =
+            width * Math.abs(Math.sin(radians)) +
+            height * Math.abs(Math.cos(radians))
+        return Math.min(width / W, height / H)
     },
-
-  };
-
-var IMAGE_URL = '../assets/rose.jpg'
+}
 
 const VERTEX_DATA = new Float32Array([
     -1.0,
@@ -126,8 +114,7 @@ export class PixelSortingModel extends RenderModel {
             .add({ name: 'ReverseSorting', type: 'f32' })
             .add({ name: 'SortedGamma', type: 'f32' })
             .build()
-        
-        
+
         this.rotationUniformBuffer = this.uniformBufferBuilder
             .add({ name: 'matrix', type: 'mat3' })
             // .add({ name: 'resolution', type: 'vec2f' })
@@ -139,7 +126,7 @@ export class PixelSortingModel extends RenderModel {
             .addAttribute({ location: 0, type: 'vec2f' })
             .addAttribute({ location: 1, type: 'vec2f' })
             .build()
-        
+
         this.vertexBuffer.apply() // TODO find a smoother way
 
         // --------------------------- BIND GROUP
@@ -316,22 +303,23 @@ export class PixelSortingModel extends RenderModel {
             this.uniformBuffer.getBuffer()
         )
 
-
-        let radians = (Math.PI / 180) * state.angle;
-        var rotationMatrix = mat3.rotation(radians);
+        let radians = (Math.PI / 180) * state.angle
+        var rotationMatrix = mat3.rotation(radians)
         //Goal is to rescale the rectangle once rotated to avoid cropping
-        const scale_value = mat3.rotationScale(radians, canvasSize[0], canvasSize[1]);
-        const scalingMatrix = mat3.scaling([scale_value, scale_value]);
-        const matrix = mat3.multiply(rotationMatrix, scalingMatrix);
+        const scale_value = mat3.rotationScale(
+            radians,
+            canvasSize[0],
+            canvasSize[1]
+        )
+        const scalingMatrix = mat3.scaling([scale_value, scale_value])
+        const matrix = mat3.multiply(rotationMatrix, scalingMatrix)
 
-        
-        
         // matrix.forEach(myFunction)
-        
+
         // function myFunction(item, index, arr) {
         //     arr[index] = item == item ? item : 0 ;
         // }
-        console.log(matrix);
+        console.log(matrix)
 
         // this.rotationUniformBuffer.set('resolution', canvasSize)
         // this.rotationUniformBuffer.set('angle', state.angle)
@@ -438,7 +426,7 @@ export class PixelSortingModel extends RenderModel {
                 max: 360,
                 step: 1,
                 handler: (v) => (state.angle = v),
-            }
+            },
         ]
         this.addControllers(controls)
     }
@@ -465,7 +453,7 @@ export class PixelSortingModel extends RenderModel {
         const outputTexture = context.getCurrentTexture()
 
         this.updateUniforms()
-        var buffer = this.uniformBuffer;
+        var buffer = this.uniformBuffer
 
         const bindGroup = this.device.createBindGroup({
             label: 'sorting buffer',
@@ -497,14 +485,16 @@ export class PixelSortingModel extends RenderModel {
                 },
             ],
         })
-        
+
         const rotationBindgroup = this.device.createBindGroup({
             label: 'rotation buffer',
             layout: this.rotationlayout,
             entries: [
                 {
                     binding: 0,
-                    resource: { buffer: this.rotationUniformBuffer.getBufferObject() },
+                    resource: {
+                        buffer: this.rotationUniformBuffer.getBufferObject(),
+                    },
                 },
                 {
                     binding: 1,
@@ -539,8 +529,6 @@ export class PixelSortingModel extends RenderModel {
         pass.draw(6)
         pass.end()
 
-     
-
         pass = encoder.beginComputePass()
 
         let width = this.textures['texture-input'].width
@@ -559,7 +547,7 @@ export class PixelSortingModel extends RenderModel {
 
         var commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])
-        renderDonePromise = device.queue.onSubmittedWorkDone();
-
+        let promise = this.device.queue.onSubmittedWorkDone()
+        setRenderDonePromise(promise)
     }
 }
