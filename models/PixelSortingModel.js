@@ -94,7 +94,7 @@ export class Sorting extends RenderModel {
     async loadAsset() {
         const source = await this.addTextureBitmap('texture-input', BITMAP)
         var size = { width: source.width, height: source.height }
-        await this.addTexture('temp', IMAGE_URL)
+        await this.addTextureBitmap('temp', BITMAP)
         await this.addStorage('mask', 'r32sint', size)
         await this.addStorage('sortvalues', 'r32float', size)
         await this.addStorage('spanlenghts', 'r32uint', size)
