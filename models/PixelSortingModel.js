@@ -90,7 +90,7 @@ const VERTEX_DATA = new Float32Array([
     1.0, // right, top
 ])
 
-export class PixelSortingModel extends RenderModel {
+export class Sorting extends RenderModel {
     async loadAsset() {
         const source = await this.addTexture('texture-input', IMAGE_URL)
         var size = { width: source.width, height: source.height }

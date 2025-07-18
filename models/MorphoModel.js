@@ -33,7 +33,7 @@ const VERTEX_DATA = new Float32Array([
     1.0, // right, top
 ])
 
-export class MorphoModel extends RenderModel {
+export class Morpho extends RenderModel {
     constructor(device, renderCtx) {
         super(device, renderCtx)
     }
@@ -98,7 +98,10 @@ export class MorphoModel extends RenderModel {
                     binding: 0,
                     resource: { buffer: this.uniformBuffer.getBufferObject() },
                 },
-                { binding: 1, resource: this.renderCtx.getSampler() },
+                {
+                    binding: 1,
+                    resource: this.renderCtx.getSampler(),
+                },
                 {
                     binding: 2,
                     resource: this.textures['texture-input'].createView(),

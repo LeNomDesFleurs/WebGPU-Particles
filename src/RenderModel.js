@@ -122,7 +122,7 @@ export class RenderModel {
         // <label>PNG file: <input type="file" id="image_input" accept="image/png" id="load-image"></label>
         const container = document.getElementById("controller");
         const fileLabel = document.createElement("label");
-        fileLabel.textContent = "PNG file: "
+        // fileLabel.textContent = "PNG file: "
         const input = document.createElement("input")
         input.type = "file"
         input.accept = "image/png, image/jpg"
@@ -143,7 +143,8 @@ export class RenderModel {
 
         
         const DownloadButton = document.createElement("button")
-        DownloadButton.textContent="Download",
+        DownloadButton.textContent = "Download",
+            DownloadButton.style.width = '100px';
 DownloadButton.addEventListener('click', async (event) => {
     handeDownload();
 })
@@ -171,6 +172,7 @@ addControllers(controls = []) {
         controls.forEach((ctrl) => {
             const label = document.createElement('label')
             label.textContent = `${ctrl.label}: `
+            label.style.width = '250px'
 
             if (ctrl.type == 'range') {
                 const input = document.createElement('input')

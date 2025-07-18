@@ -33,7 +33,7 @@ const VERTEX_DATA = new Float32Array([
     1.0, // right, top
 ])
 
-export class DitheringModel extends RenderModel {
+export class Dithering extends RenderModel {
     constructor(device, renderCtx) {
         super(device, renderCtx)
     }

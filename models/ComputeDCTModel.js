@@ -2,7 +2,7 @@ import { RenderModel } from '../src/RenderModel.js'
 import { UniformBufferBuilder } from '../src/Buffer.js'
 import { IMAGE_URL, setRenderDonePromise } from '../src/utils.js'
 
-export class ComputeDCTModel extends RenderModel {
+export class DCT extends RenderModel {
     constructor(device, renderCtx) {
         super(device, renderCtx)
     }
@@ -34,7 +34,7 @@ export class ComputeDCTModel extends RenderModel {
         context.configure({
             device: this.device,
             format: 'rgba8unorm',
-            usage: GPUTextureUsage.STORAGE_BINDING,
+            usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
         })
 
         const bindGroupLayout = this.device.createBindGroupLayout({
@@ -71,8 +71,6 @@ export class ComputeDCTModel extends RenderModel {
         const pipelineLayout = this.device.createPipelineLayout({
             bindGroupLayouts: [bindGroupLayout],
         })
-
-        this.test = this.textureOut1.createView()
 
         this.bindGroup1 = this.device.createBindGroup({
             label: 'dct1-bindgroup',

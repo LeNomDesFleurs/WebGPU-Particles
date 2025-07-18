@@ -1,17 +1,17 @@
-import { ComputeDCTModel } from './models/ComputeDCTModel.js'
-import { DitheringModel } from './models/DitheringModel.js'
-import { PixelSortingModel } from './models/PixelSortingModel.js'
-import { MorphoModel } from './models/MorphoModel.js'
+import { DCT } from './models/ComputeDCTModel.js'
+import { Dithering } from './models/DitheringModel.js'
+import { Sorting } from './models/PixelSortingModel.js'
+import { Morpho } from './models/MorphoModel.js'
 import { getRendererContextInstance } from './src/RenderContext.js'
 import { state, getRenderDonePromise } from './src/utils.js'
 
-const MODELS = [ComputeDCTModel, DitheringModel, PixelSortingModel, MorphoModel];
+const MODELS = [DCT, Dithering, Sorting, Morpho];
 let CURRENT_MODEL;
 let renderContext;
 
 
 async function initDefaultModel(renderContext) {
-    CURRENT_MODEL = new DitheringModel(
+    CURRENT_MODEL = new Dithering(
         renderContext.getDevice(),
         renderContext
     )
@@ -81,8 +81,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     MODELS.forEach((model) => {
         const button = document.createElement('button')
         button.textContent = model.name;
-        button.style.backgroundColor = 'blue';
-        button.style.width = '5rem'
+        button.style.backgroundColor = 'rgb(255, 255, 255)';
+        button.style.opacity = 0.7;
+        button.style.margin = '0.1em';
+        button.style.width = '5rem';
+        button.style.border = '0em';
+        button.style.borderRadius = '1em'
         button.addEventListener('click', async () => {
             // if (CURRENT_MODEL.name == model.name) { plus tard -> disable if already clicked
             //     button.style.backgroundColor = 'green';
