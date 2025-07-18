@@ -1,6 +1,6 @@
 import { UniformBufferBuilder } from '../src/Buffer.js'
 import { RenderModel } from '../src/RenderModel.js'
-import { state, IMAGE_URL, setRenderDonePromise } from '../src/utils.js'
+import { state, IMAGE_URL, BITMAP, setRenderDonePromise } from '../src/utils.js'
 
 let DITHERING_SHADER_PATH = './shaders/dithering.wgsl'
 
@@ -39,7 +39,7 @@ export class Dithering extends RenderModel {
     }
 
     async loadAsset() {
-        await this.addTexture('texture-input', IMAGE_URL)
+        await this.addTextureBitmap('texture-input', BITMAP)
         await this.addShaderModule('dithering', DITHERING_SHADER_PATH)
     }
 

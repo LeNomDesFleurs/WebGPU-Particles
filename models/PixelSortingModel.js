@@ -1,7 +1,7 @@
 import { RenderModel } from '../src/RenderModel.js'
 import { UniformBufferBuilder } from '../src/Buffer.js'
 import { loadImageBitmap } from '../src/utils.js'
-import { state, IMAGE_URL, setRenderDonePromise } from '../src/utils.js'
+import { state, BITMAP, setRenderDonePromise } from '../src/utils.js'
 
 const mat3 = {
     multiply(a, b) {
@@ -92,7 +92,7 @@ const VERTEX_DATA = new Float32Array([
 
 export class Sorting extends RenderModel {
     async loadAsset() {
-        const source = await this.addTexture('texture-input', IMAGE_URL)
+        const source = await this.addTextureBitmap('texture-input', BITMAP)
         var size = { width: source.width, height: source.height }
         await this.addTexture('temp', IMAGE_URL)
         await this.addStorage('mask', 'r32sint', size)

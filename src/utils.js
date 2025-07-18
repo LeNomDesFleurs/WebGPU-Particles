@@ -22,6 +22,24 @@ export const state = {
 
 export var IMAGE_URL = '../assets/rose.jpg';
 
+export var BITMAP;
+
+export async function SetBitMap(url) { 
+	BITMAP = await loadImageBitmap(url, { colorSpaceConverrsion: 'none' });
+}
+
+export async function loadBitMap(bitmap) { 
+	BITMAP = bitmap;
+}
+
+export async function getBitMap() { 
+	return BITMAP
+}
+
+export function setImageUrl(data) { 
+	IMAGE_URL = data;
+}
+
 let renderDonePromise;
 export function setRenderDonePromise(promise) {
   renderDonePromise = promise;

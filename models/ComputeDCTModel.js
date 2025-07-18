@@ -1,6 +1,6 @@
 import { RenderModel } from '../src/RenderModel.js'
 import { UniformBufferBuilder } from '../src/Buffer.js'
-import { IMAGE_URL, setRenderDonePromise } from '../src/utils.js'
+import { BITMAP, setRenderDonePromise } from '../src/utils.js'
 
 export class DCT extends RenderModel {
     constructor(device, renderCtx) {
@@ -8,7 +8,7 @@ export class DCT extends RenderModel {
     }
 
     async loadAsset() {
-        await this.addTexture('texture-input', IMAGE_URL)
+        await this.addTextureBitmap('texture-input', BITMAP)
         await this.addShaderModule('dct1', './shaders/DCTcompute.wgsl')
     }
 

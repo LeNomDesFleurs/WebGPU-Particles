@@ -3,7 +3,7 @@ import { Dithering } from './models/DitheringModel.js'
 import { Sorting } from './models/PixelSortingModel.js'
 import { Morpho } from './models/MorphoModel.js'
 import { getRendererContextInstance } from './src/RenderContext.js'
-import { state, getRenderDonePromise } from './src/utils.js'
+import { state, getRenderDonePromise, SetBitMap, IMAGE_URL } from './src/utils.js'
 
 const MODELS = [DCT, Dithering, Sorting, Morpho];
 let CURRENT_MODEL;
@@ -11,6 +11,7 @@ let renderContext;
 
 
 async function initDefaultModel(renderContext) {
+    await SetBitMap(IMAGE_URL);
     CURRENT_MODEL = new Dithering(
         renderContext.getDevice(),
         renderContext
