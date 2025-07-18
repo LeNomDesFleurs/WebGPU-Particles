@@ -103,6 +103,16 @@ export class Sorting extends RenderModel {
     }
 
     createResources() {
+
+        const canvas = document.getElementById('gfx')
+        const context = canvas.getContext('webgpu')
+        context.configure({
+            device: this.device,
+            format: 'bgra8unorm',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        })
+
+
         this.uniformBuffer = this.uniformBufferBuilder
             .add({ name: 'resolution', type: 'vec2' })
             .add({ name: 'LowThreshold', type: 'f32' })
