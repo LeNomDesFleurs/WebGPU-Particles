@@ -17,6 +17,7 @@ export class RenderModel {
         this.device = device
         this.queue = []
         this.shaderModules = new Map()
+        this.pixelBuffer
         this.textures = new Map()
         this._pipelineObject = null
 
@@ -162,22 +163,32 @@ export class RenderModel {
         ;(DownloadButton.textContent = 'Download'),
             (DownloadButton.style.width = '100px')
         DownloadButton.addEventListener('click', async (event) => {
-            handeDownload()
+            await this.render();
+            handeDownload(this.pixelBuffer, this.widthBytes, this.heightBytes)
         })
         container.appendChild(DownloadButton)
 
-        async function handeDownload() {
-            const promise = getRenderDonePromise()
-            if (promise) {
-                await promise // Wait for GPU rendering to complete
-            }
+        async function handeDownload(pixelBuffer, widthBytes, heightBytes) {
+
             let canvas = document.getElementById('gfx')
-            let canvasUrl = canvas.toDataURL('image/jpeg', 0.5)
+            let canvasUrl = canvas.toDataURL('image/jpeg', 1)
             const createEl = document.createElement('a')
             createEl.href = canvasUrl
             createEl.download = 'Processed Image'
             createEl.click()
             createEl.remove()
+        }
+
+        function convertBGRAtoRGBA(input, width, height) {
+            const output = new Uint8ClampedArray(width * height * 4)
+            for (let i = 0; i < width * height; i++) {
+                const idx = i * 4
+                output[idx + 0] = input[idx + 2] // R <- B
+                output[idx + 1] = input[idx + 1] // G <- G
+                output[idx + 2] = input[idx + 0] // B <- R
+                output[idx + 3] = input[idx + 3] // A unchanged
+            }
+            return output
         }
     }
 
@@ -285,6 +296,8 @@ export class RenderModel {
     }
     //trying to generalize the use of the state bitmap, keeping old function below for now
     async addTextureBitmap(name, bitmap, format = 'rgba8unorm') {
+        this.width = bitmap.width
+        this.height = bitmap.height
         const texture = this.device.createTexture({
             label: name,
             format,

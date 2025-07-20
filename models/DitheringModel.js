@@ -216,7 +216,5 @@ export class Dithering extends RenderModel {
         pass.end()
 
         this.swapFramebuffer(encoder)
-        let promise = this.device.queue.onSubmittedWorkDone()
-        setRenderDonePromise(promise)
     }
 }

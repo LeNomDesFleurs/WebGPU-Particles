@@ -12,7 +12,7 @@ let renderContext;
 
 async function initDefaultModel(renderContext) {
     await SetBitMap(IMAGE_URL);
-    CURRENT_MODEL = new DCT(
+    CURRENT_MODEL = new Morpho(
         renderContext.getDevice(),
         renderContext
     )

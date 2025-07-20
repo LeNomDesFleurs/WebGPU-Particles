@@ -534,7 +534,5 @@ export class Sorting extends RenderModel {
 
         var commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])
-        let promise = this.device.queue.onSubmittedWorkDone()
-        setRenderDonePromise(promise)
     }
 }

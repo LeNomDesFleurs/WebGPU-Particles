@@ -192,8 +192,6 @@ const canvas = document.getElementById('gfx')
 
         const commandBuffer = encoder.finish()
         this.device.queue.submit([commandBuffer])
-        let promise = this.device.queue.onSubmittedWorkDone();
-        setRenderDonePromise(promise);
     }
 
   

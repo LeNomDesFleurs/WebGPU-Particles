@@ -44,13 +44,13 @@ export class Morpho extends RenderModel {
     }
 
     createResources() {
-
         const canvas = document.getElementById('gfx')
         const context = canvas.getContext('webgpu')
 
         context.configure({
             device: this.device,
             format: 'bgra8unorm',
+            alphaMode: 'premultiplied',
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
         })
 
@@ -220,9 +220,6 @@ export class Morpho extends RenderModel {
         pass.setVertexBuffer(0, this.vertexBuffer.getBufferObject())
         pass.draw(6)
         pass.end()
-
         this.swapFramebuffer(encoder)
-        let promise = this.device.queue.onSubmittedWorkDone()
-        setRenderDonePromise(promise)
     }
 }

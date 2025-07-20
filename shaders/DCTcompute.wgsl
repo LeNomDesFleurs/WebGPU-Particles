@@ -76,8 +76,6 @@ cache1[local_id.x][local_id.y]=tex;
         // fragColor = round(fragColor/8.*NB_LEVELS)/NB_LEVELS*8.;
 
 
-    // textureStore(tempTexture, id.xy, vec4f(fragColor, 1.0));
-
     workgroupBarrier();
 
 
