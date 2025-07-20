@@ -140,7 +140,7 @@ export class RenderModel {
         // fileLabel.textContent = "PNG file: "
         const input = document.createElement('input')
         input.type = 'file'
-        input.accept = 'image/png, image/jpg'
+        input.accept = 'image/png, image/jpg, image/jpeg'
         input.addEventListener('change', async (event) => {
             const file = event.target.files[0]
             await setImageUrl(file)
