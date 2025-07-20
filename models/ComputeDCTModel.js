@@ -22,20 +22,17 @@ export class DCT extends RenderModel {
             .add({name: 'compression', type: 'f32'})
             .build()
 
+        console.log([this.textures['texture-input'].width, this.textures['texture-input'].height])
+        
         this.textureOut1 = this.device.createTexture({
             label: 'texture-out1',
             format: 'rgba8unorm',
             size: [this.textures['texture-input'].width, this.textures['texture-input'].height],
+            // size: [canvas.width, canvas.height],
             usage:
                 GPUTextureUsage.TEXTURE_BINDING |
                 GPUTextureUsage.RENDER_ATTACHMENT |
                 GPUTextureUsage.STORAGE_BINDING,
-        })
-
-        context.configure({
-            device: this.device,
-            format: 'rgba8unorm',
-            usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
         })
 
         const bindGroupLayout = this.device.createBindGroupLayout({
@@ -75,25 +72,6 @@ export class DCT extends RenderModel {
             bindGroupLayouts: [bindGroupLayout],
         })
 
-        this.bindGroup1 = this.device.createBindGroup({
-            label: 'dct1-bindgroup',
-            layout: bindGroupLayout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: { buffer: this.uniformBuffer.getBufferObject() },
-                },
-                {
-                    binding: 1,
-                    resource: this.textures['texture-input'].createView(),
-                },
-                {
-                    binding: 2,
-                    resource: context.getCurrentTexture().createView(),
-                },
-            ],
-        })
-
         this.pipeline1 = this.device.createComputePipeline({
             label: 'dct-pipeline',
             layout: pipelineLayout,
@@ -106,6 +84,8 @@ export class DCT extends RenderModel {
 
     updateUniforms() {
         const canvasSize = this.renderCtx.getCanvasSize()
+        console.log("canvas size")
+        console.log(canvasSize)
         this.uniformBuffer
             .set('resolution', canvasSize)
             .set('frequence', state.freq)
@@ -144,9 +124,13 @@ export class DCT extends RenderModel {
         let nb_freq = 8
 
         const source = await loadImageBitmap(BITMAP)
-const canvas = document.getElementById('gfx')
+        const canvas = document.getElementById('gfx')
         const context = canvas.getContext('webgpu')
-        
+        console.log("render canvas")
+        console.log(canvas.width, canvas.height)
+
+        // console.log([this.textures['texture-input'].width, this.textures['texture-input'].height]);
+
         this.updateUniforms()
         context.configure({
             device: this.device,
