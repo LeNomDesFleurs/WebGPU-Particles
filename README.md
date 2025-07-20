@@ -31,12 +31,13 @@ Experimenting with particle systems in web-GPU
 
 ## To-Do
 
-- [ ] selection de mode
+- [x] selection de mode
 - [ ] Uniform generator
 - [ ] keyboard shortcut interaction
 - [x] shader preprocessor (include)
-- [ ] Going from compute to fragment breaks the canvas texture
+- [x] Going from compute to fragment breaks the canvas texture
 - [ ] chain shaders
+- [ ] compute shader size is not update properly (eg upload a big image, it will only display the corner)
 - [ ] preview original
 - [ ] Half res preview option
 
