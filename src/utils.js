@@ -17,6 +17,8 @@ export const state = {
 	r: 4,
 	brush_type: 0,
 	p: 0.3,
+	compression: 18,
+	freq: 0,
 	
 }
 

@@ -10,6 +10,7 @@
 struct Uniforms {
     resolution: vec2f,
     freq: f32,
+    compression: f32,
 };
 
 @group(0) @binding(0)
@@ -21,7 +22,6 @@ var<uniform> uniforms: Uniforms;
 const PI:f32= 3.1415972;
 const SQRT2:f32= 0.70710678118;
 
-const NB_LEVELS:f32= 11.;
 const NB_FREQ:i32= 8;
 
 fn DCTcoeff(k:vec2f, x:vec2f)->f32
@@ -70,7 +70,7 @@ cache1[local_id.x][local_id.y]=tex;
 
    	// var fragColor:vec3f = textureLoad(tempTexture, id.xy).rgb;
     var color = cache2[local_id.x][local_id.x];
-    cache2[local_id.x][local_id.x] = round(color/8.0*f32(NB_LEVELS))/f32(NB_LEVELS)*f32(NB_FREQ); 
+    cache2[local_id.x][local_id.x] = round(color/8.0*uniforms.compression)/uniforms.compression*f32(NB_FREQ); 
     // if(texelFetch(iChannel2, ivec2(65, 0), 0).x<0.5)
         // this assumes data between 0 and 1.
         // fragColor = round(fragColor/8.*NB_LEVELS)/NB_LEVELS*8.;
@@ -86,8 +86,8 @@ cache1[local_id.x][local_id.y]=tex;
 
     var value: vec3f = vec3f(0.f) ;
 
-    for(var u:i32=0; u<NB_FREQ; u++){
-    	for(var v:i32=0; v<NB_FREQ; v++)
+    for(var u:i32=0; u<NB_FREQ-i32(uniforms.freq); u++){
+    	for(var v:i32=0; v<NB_FREQ-i32(uniforms.freq); v++)
         {
             var ux:f32 = 1.0;
             var vy:f32 = 1.0;

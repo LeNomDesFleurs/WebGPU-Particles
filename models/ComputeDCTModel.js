@@ -1,6 +1,6 @@
 import { RenderModel } from '../src/RenderModel.js'
 import { UniformBufferBuilder } from '../src/Buffer.js'
-import { BITMAP, setRenderDonePromise } from '../src/utils.js'
+import { BITMAP, state, setRenderDonePromise, loadImageBitmap } from '../src/utils.js'
 
 export class DCT extends RenderModel {
     constructor(device, renderCtx) {
@@ -8,7 +8,7 @@ export class DCT extends RenderModel {
     }
 
     async loadAsset() {
-        await this.addTextureBitmap('texture-input', BITMAP)
+        const source = await this.addTextureBitmap('texture-input', BITMAP)
         await this.addShaderModule('dct1', './shaders/DCTcompute.wgsl')
     }
 
@@ -19,6 +19,7 @@ export class DCT extends RenderModel {
         this.uniformBuffer = this.uniformBufferBuilder
             .add({ name: 'resolution', type: 'vec2' })
             .add({ name: 'frequence', type: 'f32' })
+            .add({name: 'compression', type: 'f32'})
             .build()
 
         this.textureOut1 = this.device.createTexture({
@@ -68,6 +69,8 @@ export class DCT extends RenderModel {
             ],
         })
 
+        this.layout = bindGroupLayout;
+
         const pipelineLayout = this.device.createPipelineLayout({
             bindGroupLayouts: [bindGroupLayout],
         })
@@ -101,25 +104,84 @@ export class DCT extends RenderModel {
         })
     }
 
-    updateUniforms(freq = 8) {
-        var canvasSize = this.renderCtx.getCanvasSize()
-        canvasSize.width = freq
-        this.uniformBuffer.set('resolution', canvasSize)
-        this.uniformBuffer.set('frequence', freq)
-
-        this.device.queue.writeBuffer(
-            this.uniformBuffer.getBufferObject(),
-            0,
-            this.uniformBuffer.getBuffer()
-        )
+    updateUniforms() {
+        const canvasSize = this.renderCtx.getCanvasSize()
+        this.uniformBuffer
+            .set('resolution', canvasSize)
+            .set('frequence', state.freq)
+            .set('compression', state.compression)
+            .apply()
     }
 
-    render() {
+    addControls() {
+        super.addControls()
+        const controls = [
+            {
+                type: 'range',
+                id: 'freq',
+                label: 'freq',
+                min: 0,
+                max: 7,
+                value: 0,
+                step: 1,
+                handler: (v) => (state.freq = v ),
+            },
+            {
+                type: 'range',
+                id: 'compression',
+                label: 'compression',
+                min: 0,
+                max: 255,
+                value: 150,
+                step: 1,
+                handler: (v) => (state.compression = v / 8.0),
+            },
+        ]
+
+        this.addControllers(controls)
+    }
+    async render() {
         let nb_freq = 8
+
+        const source = await loadImageBitmap(BITMAP)
+const canvas = document.getElementById('gfx')
+        const context = canvas.getContext('webgpu')
+        
+        this.updateUniforms()
+        context.configure({
+            device: this.device,
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
+        })
+        
+        this.device.queue.copyExternalImageToTexture(
+            { source: source },
+            { texture: this.textures['texture-input'] },
+            { width: source.width, height: source.height }
+        )
+
+
+        this.bindGroup1 = this.device.createBindGroup({
+            label: 'dct1-bindgroup',
+            layout: this.layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: { buffer: this.uniformBuffer.getBufferObject() },
+                },
+                {
+                    binding: 1,
+                    resource: this.textures['texture-input'].createView(),
+                },
+                {
+                    binding: 2,
+                    resource: context.getCurrentTexture().createView(),
+                },
+            ],
+        })
 
         const encoder = this.device.createCommandEncoder({ label: 'DCT' })
 
-        this.updateUniforms(nb_freq)
 
         const pass = encoder.beginComputePass()
 
@@ -134,7 +196,5 @@ export class DCT extends RenderModel {
         setRenderDonePromise(promise);
     }
 
-    addControllers() {
-        throw new Error('addControllers() must be implemented by subclass')
-    }
+  
 }

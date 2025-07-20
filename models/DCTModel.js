@@ -17,6 +17,8 @@ export class DCTModel extends RenderModel {
     createResources() {
         this.uniformBuffer = this.uniformBufferBuilder
             .add({ name: 'resolution', type: 'vec2' })
+            .add({ name: 'freq', type: 'f32' })
+            .add({ name: 'compression', type: 'f32' })
             .build()
 
         this.textureOut1 = this.device.createTexture({
@@ -159,12 +161,39 @@ export class DCTModel extends RenderModel {
 
     updateUniforms(...args) {
         const canvasSize = this.renderCtx.getCanvasSize()
-        this.uniformBuffer.set('resolution', canvasSize)
-        this.device.queue.writeBuffer(
-            this.uniformBuffer.getBufferObject(),
-            0,
-            this.uniformBuffer.getBuffer()
-        )
+        this.uniformBuffer
+            .set('resolution', canvasSize)
+            .set('freq', state.freq)
+            .set('compression', state.compression)
+            .apply()
+    }
+
+    addControls() {
+        super.addControls()
+        const controls = [
+            {
+                type: 'range',
+                id: 'freq',
+                label: 'freq',
+                min: 0,
+                max: 126,
+                value: 2,
+                step: 1,
+                handler: (v) => (state.freq = v / 4),
+            },
+            {
+                type: 'range',
+                id: 'compression',
+                label: 'compression',
+                min: 0,
+                max: 255,
+                value: 255,
+                step: 1,
+                handler: (v) => (state.compression = v / 4.0),
+            },
+        ]
+
+        this.addControllers(controls)
     }
 
     render() {

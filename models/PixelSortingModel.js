@@ -306,12 +306,7 @@ export class Sorting extends RenderModel {
         this.uniformBuffer.set('SortBy', state.SortBy)
         this.uniformBuffer.set('ReverseSorting', state.ReverseSorting)
         this.uniformBuffer.set('SortedGamma', state.SortedGamma)
-        this.uniformBuffer.set()
-        this.device.queue.writeBuffer(
-            this.uniformBuffer.getBufferObject(),
-            0,
-            this.uniformBuffer.getBuffer()
-        )
+        this.uniformBuffer.apply()
 
         let radians = (Math.PI / 180) * state.angle
         var rotationMatrix = mat3.rotation(radians)
@@ -324,20 +319,6 @@ export class Sorting extends RenderModel {
         const scalingMatrix = mat3.scaling([scale_value, scale_value])
         const matrix = mat3.multiply(rotationMatrix, scalingMatrix)
 
-        // matrix.forEach(myFunction)
-
-        // function myFunction(item, index, arr) {
-        //     arr[index] = item == item ? item : 0 ;
-        // }
-        // console.log(matrix)
-
-        // this.rotationUniformBuffer.set('resolution', canvasSize)
-        // this.rotationUniformBuffer.set('angle', state.angle)
-        // matrix.set([
-        //     ...matrix.slice(0, 3), 0,
-        //     ...matrix.slice(3, 6), 0,
-        //     ...matrix.slice(6, 9), 0,
-        //   ]);
         this.rotationUniformBuffer.matrixSet('matrix', matrix)
 
         this.device.queue.writeBuffer(
@@ -442,8 +423,7 @@ export class Sorting extends RenderModel {
     }
 
     async render() {
-        const source = await loadImageBitmap('../assets/rose.jpg')
-        // var source = createImageBitmap(IMAGE_URL, {colorSpaceConversion: 'none',})
+        const source = await loadImageBitmap(BITMAP)
 
         this.device.queue.copyExternalImageToTexture(
             { source: source },
@@ -518,9 +498,6 @@ export class Sorting extends RenderModel {
         })
 
         const encoder = this.device.createCommandEncoder({ label: 'sorting' })
-
-        // const encoder = this.device.createCommandEncoder({ label: 'dithering' })
-        // this.updateUniforms()
 
         var pass = encoder.beginRenderPass({
             label: 'rotation',
