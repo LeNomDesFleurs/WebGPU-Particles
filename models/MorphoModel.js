@@ -173,7 +173,7 @@ export class Morpho extends RenderModel {
                 max: 255,
                 value: 100,
                 step: 1,
-                handler: (v) => (state.r = (v + 32) / 16.0),
+                handler: (v) => (state.r = (v + 32.0) / 16.0),
             },
             {
                 type: 'range',

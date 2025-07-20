@@ -2,9 +2,9 @@
 
 struct Uniforms {
     resolution: vec2f,
-    op:i32,// op 1:   0: neutral  1: dilatation   2 : erosion
+    op:f32,// op 1:   0: neutral  1: dilatation   2 : erosion
     r:f32,
-    brush_type:i32,
+    brush_type:f32,
     // brush:  
     //0: disk 
     //1: star  
@@ -42,16 +42,22 @@ fn vs(vert: Vertex, @builtin(vertex_index) vertexIndex : u32) -> OurVertexShader
 fn brush(d:vec2f) -> bool {   
     var b:vec2f = abs(d);
     var morpho:bool=false;
-    switch (uniforms.brush_type){
+    let brush:i32 = i32(uniforms.brush_type);
+    switch (brush){
+    //0: disk 
         case 0:{
         morpho= dot(b,b) <= uniforms.r*uniforms.r;
         }
+    //1: star  
         case 1:{
+            // TO DO r and p are behaving weirdly
         morpho= pow(b.x,uniforms.p)+pow(b.y,uniforms.p) <= pow(uniforms.r,uniforms.p);
         }
+    //2: diamond  
         case 2:{
         morpho= ((b.x+b.y) < uniforms.r);
         }
+    //3: square 
         case 3:{
         morpho= (max(b.x,b.x*.5+b.y*.87) < uniforms.r);
         }
