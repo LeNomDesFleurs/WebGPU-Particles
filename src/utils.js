@@ -11,7 +11,7 @@ export const state = {
 	SortBy:0.0,
 	ReverseSorting: 0.0,
 	SortedGamma: 1.0,
-	angle: 0.0,
+	angle: 0,
 	//morpho
 	op: 0,
 	r: 4,
@@ -61,6 +61,7 @@ export const TYPE_SIZE = {
 	'vec2f' : 8,
 	'vec3f' : 12,
 	// 'mat3'  : 36,//Quick fix to account for padding
+	// 'mat3' are actually 4x4, with on unused float at the end of each row
 	'mat3' : 36,
 	'mat4' : 64,
 	'u32' : 4,

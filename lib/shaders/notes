@@ -14,3 +14,10 @@ may need to declare the input texture in the frame to avoid destruction. might a
 edge sorting : compare pixels two by two, if they are too different go to next span
 
 what does "too different" mean ? Sum all difference between colors, if it is > said number define is as an edge
+
+
+## Rotation
+
+from [this lib](https://github.com/greggman/wgpu-matrix) on matrix rotation
+
+> vec3 in this library uses 3 floats per but be aware that an array of vec3 in a Uniform Block or other structure in WGSL, each vec3 is padded to 4 floats! In other words, if you declare

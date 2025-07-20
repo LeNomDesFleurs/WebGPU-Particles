@@ -329,7 +329,7 @@ export class Sorting extends RenderModel {
         // function myFunction(item, index, arr) {
         //     arr[index] = item == item ? item : 0 ;
         // }
-        console.log(matrix)
+        // console.log(matrix)
 
         // this.rotationUniformBuffer.set('resolution', canvasSize)
         // this.rotationUniformBuffer.set('angle', state.angle)
@@ -338,7 +338,7 @@ export class Sorting extends RenderModel {
         //     ...matrix.slice(3, 6), 0,
         //     ...matrix.slice(6, 9), 0,
         //   ]);
-        this.rotationUniformBuffer.set('matrix', matrix)
+        this.rotationUniformBuffer.matrixSet('matrix', matrix)
 
         this.device.queue.writeBuffer(
             this.rotationUniformBuffer.getBufferObject(),

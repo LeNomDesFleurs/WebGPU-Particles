@@ -12,7 +12,7 @@ let renderContext;
 
 async function initDefaultModel(renderContext) {
     await SetBitMap(IMAGE_URL);
-    CURRENT_MODEL = new Dithering(
+    CURRENT_MODEL = new Sorting(
         renderContext.getDevice(),
         renderContext
     )
