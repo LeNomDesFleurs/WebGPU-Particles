@@ -163,13 +163,12 @@ export class RenderModel {
         ;(DownloadButton.textContent = 'Download'),
             (DownloadButton.style.width = '100px')
         DownloadButton.addEventListener('click', async (event) => {
-            await this.render();
+            await this.render()
             handeDownload(this.pixelBuffer, this.widthBytes, this.heightBytes)
         })
         container.appendChild(DownloadButton)
 
         async function handeDownload(pixelBuffer, widthBytes, heightBytes) {
-
             let canvas = document.getElementById('gfx')
             let canvasUrl = canvas.toDataURL('image/jpeg', 1)
             const createEl = document.createElement('a')
@@ -208,6 +207,7 @@ export class RenderModel {
                 input.max = ctrl.max
                 input.step = ctrl.step
                 input.value = ctrl.value
+                // TODO throttle sliders
                 input.addEventListener('input', () => {
                     ctrl.handler(parseFloat(input.value))
                     this.render()
@@ -313,8 +313,13 @@ export class RenderModel {
             { texture },
             { width: bitmap.width, height: bitmap.height }
         )
-        this.renderCtx.setCanvasSize(bitmap.width, bitmap.height)
 
+        console.log('setsize')
+        console.log([bitmap.width, bitmap.height])
+        // this.renderCtx.setCanvasSize(bitmap.width, bitmap.height)
+        let canvas = this.renderCtx.getCanvas()
+        canvas.width = bitmap.width
+        canvas.height = bitmap.height
         return texture
     }
 
@@ -337,7 +342,13 @@ export class RenderModel {
             { texture },
             { width: source.width, height: source.height }
         )
-        this.renderCtx.setCanvasSize(source.width, source.height)
+
+        console.log('2nd set')
+        console.log([source.width, source.height])
+        let canvas = this.renderCtx.getCanvas()
+        canvas.width = source.width
+        canvas.height = source.height
+        // this.renderCtx.setCanvasSize(source.width, source.height)
 
         return texture
     }
